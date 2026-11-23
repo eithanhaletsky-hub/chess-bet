@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>הימורי שחמט</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a sports-betting app at night: punchy, bright, playful, for a school chess tournament
+   IDEA: the live odds board of a sports app, with chess pieces as icons and badges
+   PICTURE: the featured match card (win-probability bar and big odds buttons), then the knockout tree and charts
+   COLOUR and TYPE: deep night navy, neon lime for action, cyan as the second side, hot red for losses; Rubik throughout
+   LAYOUT: sticky top bar with balance, bottom tab bar, slip docked above it, one column of cards up to 760px */
+:root{color-scheme:dark;--bg:#0a0e15;--s1:#111824;--s2:#18212f;--line:#243044;--ink:#eef3fb;--mute:#8b99ae;--lime:#c6ff3d;--cyan:#3de0ff;--red:#ff4d6d}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;color:var(--ink);font:16px/1.5 Rubik,system-ui,sans-serif;overflow-x:clip;padding-bottom:170px;background:radial-gradient(900px 420px at 85% -8%,#1b2b0c 0,transparent 65%),radial-gradient(800px 380px at 0 0,#0b2634 0,transparent 60%),var(--bg);background-attachment:fixed;min-height:100vh}
+h1,h2,h3,h4{margin:0;line-height:1.1;text-wrap:balance}
+h1{font-size:22px;font-weight:900}h2{font-size:22px;font-weight:800}h4{font-size:13px;color:var(--mute);font-weight:500;margin:14px 0 6px}
+small,.s{font-size:13px;color:var(--mute)}
+button,select,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--lime);outline-offset:2px}
+svg{width:24px;height:24px;fill:currentColor}
+.top{position:sticky;top:0;z-index:8;background:#0a0e15e8;backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+.top .in{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:10px 14px}
+.logo{display:flex;align-items:center;gap:8px;margin-inline-end:auto}.logo b{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:var(--lime);color:#0a0e15;font-size:22px}
+.pill{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:99px;background:var(--s2);border:1px solid var(--line);font-weight:800;white-space:nowrap;font-variant-numeric:tabular-nums}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--lime);box-shadow:0 0 10px var(--lime)}
+select{min-height:40px;padding:4px 10px;border-radius:10px;border:1px solid var(--line);background:var(--s2);max-width:130px}
+.ic{display:grid;place-items:center;width:44px;height:44px;border-radius:12px;color:var(--mute);text-decoration:none;border:0;background:none;cursor:pointer}.ic.on{color:var(--lime)}
+main{max-width:760px;margin:0 auto;padding:16px 14px;display:grid;gap:14px}
+.card{background:var(--s1);border:1px solid var(--line);border-radius:18px;padding:16px}
+.hero{background:linear-gradient(160deg,#16220f 0,var(--s1) 45%,#0d1f2a 100%);border-color:#3a5a12;box-shadow:0 0 0 1px #c6ff3d22,0 18px 50px -20px #c6ff3d55}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.sb{justify-content:space-between}
+.tag{font-size:13px;padding:3px 10px;border-radius:99px;background:var(--s2);border:1px solid var(--line);white-space:nowrap;font-weight:500}
+.tag.lime{background:var(--lime);color:#0a0e15;border:0;font-weight:800}
+.live{color:#fff;background:var(--red);border:0;font-weight:800;display:inline-flex;align-items:center;gap:6px}
+.live::before{content:"";width:7px;height:7px;border-radius:50%;background:#fff;animation:pulse 1.2s infinite}
+@keyframes pulse{50%{opacity:.2}}
+.duel{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;margin:16px 0 12px;text-align:center}
+.pl{display:grid;justify-items:center;gap:4px}.pl b{font-size:20px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.hero .pl b{font-size:26px}
+.av{display:grid;place-items:center;width:52px;height:52px;border-radius:50%;font-size:28px;line-height:1;background:#eef3fb;color:#0a0e15;box-shadow:0 0 0 3px var(--s1),0 0 0 5px var(--lime)}
+.av.k{background:#05070b;color:#eef3fb;box-shadow:0 0 0 3px var(--s1),0 0 0 5px var(--cyan)}
+.vs{font-weight:900;font-size:13px;color:var(--mute);padding:6px 8px;border-radius:8px;background:var(--s2)}
+.pbar{display:flex;height:8px;border-radius:99px;overflow:hidden;gap:2px}.pbar i:nth-child(1){background:var(--lime)}.pbar i:nth-child(2){background:#55627a}.pbar i:nth-child(3){background:var(--cyan)}
+.odds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.odds.four{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media(max-width:480px){.odds.four{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.ob{min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:6px;border-radius:12px;border:1px solid var(--line);background:var(--s2);cursor:pointer;transition:transform .1s}
+.ob small{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.ob b{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.ob:hover{border-color:#3a4a62}.ob:active{transform:scale(.97)}
+.ob.sel{background:var(--lime);border-color:var(--lime);box-shadow:0 0 18px #c6ff3d66}.ob.sel small,.ob.sel b{color:#0a0e15}
+details summary{cursor:pointer;margin-top:12px;color:var(--cyan);font-weight:500;min-height:32px;list-style:none}details summary::before{content:"+ "}details[open] summary::before{content:"− "}
+.hs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 6px;margin-top:8px}.hs .ob{flex:0 0 110px}
+.btn{min-height:44px;padding:8px 18px;border-radius:12px;border:0;background:var(--lime);color:#0a0e15;font-weight:800;cursor:pointer}
+.btn.g{background:var(--s2);color:var(--ink);border:1px solid var(--line)}.btn.r{background:var(--red);color:#fff}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+input,select.f{min-height:44px;font-size:16px;padding:8px 12px;border-radius:12px;border:1px solid var(--line);background:var(--s2);max-width:none}
+textarea{width:100%;min-height:90px;font:inherit;font-size:14px;color:inherit;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--s2)}
+table{width:100%;border-collapse:collapse}th,td{padding:10px 6px;border-bottom:1px solid var(--line);text-align:start}th{font-size:13px;color:var(--mute);font-weight:500}
+td.n,th.n{text-align:end;font-variant-numeric:tabular-nums;white-space:nowrap}
+.up{color:var(--lime)}.dn{color:var(--red)}
+.dot{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:50%;font-weight:800;color:#0a0e15;flex:none}
+.nav{position:fixed;bottom:0;inset-inline:0;z-index:9;background:#0d121bf2;backdrop-filter:blur(10px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.nav .in{max-width:760px;margin:0 auto;display:grid;grid-template-columns:repeat(5,minmax(0,1fr))}
+.nav a{display:grid;justify-items:center;gap:2px;padding:8px 0 10px;color:var(--mute);text-decoration:none;font-size:13px;position:relative}
+.nav a.on{color:var(--lime)}.nav a.on svg{filter:drop-shadow(0 0 6px #c6ff3d99)}
+.nav a .nt{position:absolute;top:6px;inset-inline-start:calc(50% + 8px);width:9px;height:9px;border-radius:50%;background:var(--red)}
+#slip{position:fixed;inset-inline:0;bottom:calc(62px + env(safe-area-inset-bottom));z-index:10;display:none;padding:0 10px}
+#slip.on{display:block}
+#slip .in{max-width:740px;margin:0 auto;background:#151e2c;border:1px solid #3a5a12;border-radius:18px 18px 14px 14px;box-shadow:0 -10px 40px #000a,0 0 30px #c6ff3d22;overflow:hidden}
+.sbar{width:100%;display:flex;align-items:center;gap:10px;min-height:54px;padding:8px 14px;border:0;background:none;cursor:pointer;font-weight:800}
+.sbar .cnt{display:grid;place-items:center;min-width:28px;height:28px;border-radius:8px;background:var(--lime);color:#0a0e15}
+.sbar .od{margin-inline-start:auto;color:var(--lime);font-variant-numeric:tabular-nums}
+.sbody{padding:0 14px 14px;display:grid;gap:10px;max-height:58vh;overflow-y:auto}
+.leg{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:var(--s2)}.leg div{flex:1}.leg b{font-variant-numeric:tabular-nums;color:var(--lime)}
+.x{width:36px;height:36px;border-radius:10px;border:0;background:#243044;cursor:pointer;flex:none}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--s2);border-radius:12px;padding:4px;gap:4px}
+.seg button{min-height:40px;border:0;border-radius:9px;background:none;cursor:pointer;font-weight:700;color:var(--mute)}.seg button.on{background:var(--ink);color:#0a0e15}
+.qa{display:flex;gap:6px;flex-wrap:wrap}.qa button{min-height:40px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:none;cursor:pointer}
+.pay{font-size:26px;font-weight:900;color:var(--lime);white-space:nowrap;font-variant-numeric:tabular-nums}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.tile{background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:14px}.tile b{display:block;font-size:30px;font-weight:900;line-height:1.1;font-variant-numeric:tabular-nums;white-space:nowrap}
+.fig{position:relative;height:260px;margin-top:12px}.fig>svg{position:absolute;inset:0;width:100%;height:100%}
+.tip{position:absolute;pointer-events:none;background:#05070bf0;border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px;display:none;white-space:nowrap;z-index:2}
+.lg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;margin-top:8px}.lg span{display:inline-flex;align-items:center;gap:6px}.lg i{width:12px;height:3px;border-radius:2px}
+.bars{display:grid;gap:10px;margin-top:10px}.br{display:grid;gap:4px}.br .t{height:10px;border-radius:99px;background:var(--s2);overflow:hidden}.br .t i{display:block;height:100%;border-radius:99px;background:var(--cyan)}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-top:12px}
+.bd{padding:12px;border-radius:14px;background:var(--s2);border:1px solid var(--line);opacity:.4;filter:grayscale(1)}
+.bd.on{opacity:1;filter:none;border-color:#4d6f15;background:linear-gradient(160deg,#1d2b0e,var(--s2))}
+.bd span{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#0a0e15;font-size:26px;color:var(--lime);margin-bottom:6px}
+.bd b{display:block;font-size:15px}
+.big{font-size:52px;font-weight:900;line-height:1;color:var(--lime);text-shadow:0 0 24px #c6ff3d55;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pod{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:end}
+.pod>div{text-align:center;background:var(--s1);border:1px solid var(--line);border-radius:16px;padding:14px 6px;display:grid;justify-items:center;gap:4px}
+.pod>div:nth-child(2){padding-block:24px;border-color:#4d6f15;box-shadow:0 0 30px -10px #c6ff3d88}
+.pod em{font-style:normal;font-size:30px;font-weight:900;color:var(--lime)}.pod b{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tree{display:flex;gap:16px;overflow-x:auto;padding:4px 0 10px}
+.col{flex:0 0 180px;display:flex;flex-direction:column;justify-content:space-around;gap:12px}.col h3{font-size:13px;color:var(--cyan);font-weight:700}
+.m{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--s2)}
+.m div{display:flex;gap:6px;align-items:center;padding:7px 10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m div+div{border-top:1px solid var(--line)}.m .w{font-weight:800;color:var(--lime)}.m .l{color:var(--mute);text-decoration:line-through}
+.m p{margin:0;padding:4px 10px;font-size:13px;color:var(--mute);border-top:1px solid var(--line)}
+.erow{display:grid;grid-template-columns:20px minmax(0,1fr) 36px 20px minmax(0,1fr) 36px;gap:6px;align-items:center;padding:8px;border-radius:12px;background:var(--s2)}
+@media(max-width:520px){.erow{grid-template-columns:20px minmax(0,1fr) 36px}}
+.prow2{display:grid;grid-template-columns:20px minmax(0,1fr) 20px minmax(0,1fr);gap:6px;align-items:center}
+tr.q td:first-child{box-shadow:inset -3px 0 0 var(--lime);color:var(--lime);font-weight:800}
+.prow{display:grid;grid-template-columns:24px minmax(0,1fr) 96px 44px;gap:6px;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}.grid2 label{display:grid;gap:4px;font-size:13px;color:var(--mute)}
+.ov{position:fixed;inset:0;z-index:20;background:#000b;display:none;place-items:center;padding:14px}.ov.on{display:grid}
+.ov .card{width:min(460px,100%);display:grid;gap:12px;max-height:88vh;overflow-y:auto}
+#toast{position:fixed;top:66px;inset-inline:0;margin:auto;width:max-content;max-width:92vw;z-index:30;background:var(--lime);color:#0a0e15;padding:10px 18px;border-radius:12px;font-weight:800;opacity:0;pointer-events:none;transition:opacity .2s;box-shadow:0 0 30px #c6ff3d66}
+#toast.on{opacity:1}#toast.bad{background:var(--red);color:#fff;box-shadow:none}#toast.gold{background:linear-gradient(90deg,#ffe14d,#c6ff3d);font-size:18px}
+.empty{text-align:center;padding:32px 16px;color:var(--mute)}
+@media(prefers-reduced-motion:reduce){.live::before{animation:none}.ob{transition:none}}
+@media(max-width:600px){.big{font-size:42px}th,td{padding:8px 4px;font-size:14px}.hero .pl b{font-size:22px}}
+</style>
+</head>
+<body>
+<div class="top"><div class="in">
+  <div class="logo"><b>♞</b><h1>שח־בט</h1></div>
+  <select id="who" aria-label="מי מהמר עכשיו"></select>
+  <button class="ic" data-act="addB" aria-label="מהמר חדש"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+  <div class="pill"><i></i><span id="bal"></span></div>
+  <a class="ic" href="#admin" id="gear" aria-label="ניהול"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9 7 7M17 17l2.1 2.1M4.9 19.1 7 17M17 7l2.1-2.1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></a>
+</div></div>
+<main id="view"></main>
+<div id="slip"><div class="in" id="slipIn"></div></div>
+<nav class="nav"><div class="in">
+  <a href="#games"><svg viewBox="0 0 24 24"><path d="M13 2 5 13h6l-1 9 8-11h-6z"/></svg>משחקים</a>
+  <a href="#tree"><svg viewBox="0 0 24 24"><path d="M3 5h6v4H3zM3 15h6v4H3zM9 7h3v10H9M12 12h3M15 10h6v4h-6z" fill="none" stroke="currentColor" stroke-width="2"/></svg>טורניר</a>
+  <a href="#rank"><svg viewBox="0 0 24 24"><path d="M7 4h10v4a5 5 0 0 1-10 0zM7 6H4v1a3 3 0 0 0 3 3M17 6h3v1a3 3 0 0 1-3 3M12 13v4M8 20h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>דירוג</a>
+  <a href="#stats"><svg viewBox="0 0 24 24"><path d="M5 20v-8M12 20V5M19 20v-5" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>סטטיסטיקה</a>
+  <a href="#me" id="meTab"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21a8 8 0 0 1 16 0" fill="none" stroke="currentColor" stroke-width="2"/></svg>אני</a>
+</div></nav>
+<div class="ov" id="ov"><div class="card" id="ovIn"></div></div>
+<div id="toast" role="status"></div>
+<script>
+{
+const KEY='chessbet-v3';
+const PAL=['#c6ff3d','#3de0ff','#ff5ccf','#ffa53d','#9d7bff','#ffe14d'];
+const LBL={w:{w:'לבן',d:'תיקו',b:'שחור'},m:{s:'עד 25',m:'26–45',l:'46+'},e:{mate:'מט',resign:'כניעה',time:'נגמר הזמן',draw:'תיקו'}};
+const TL={w:'תוצאה',m:'מהלכים',e:'סיום'};
+const BASE={m:{s:3,m:2,l:2.5},e:{mate:2.5,resign:1.8,time:4}};
+const FMT={ko:'נוקאאוט',league:'ליגה',swiss:'שווייצרית',groups:'בתים + נוקאאוט'};
+const FD={ko:'מי שמפסיד מודח. הזוכה בגמר הוא האלוף.',league:'כולם נגד כולם. ניצחון נקודה, תיקו חצי נקודה. מי שצובר הכי הרבה נקודות זוכה.',swiss:'מספר קבוע של סיבובים. בכל סיבוב משחקים מול מי שיש לו ניקוד דומה, בלי לפגוש אותו יריב פעמיים. פטור שווה נקודה.',groups:'השחקנים מתחלקים לבתים לפי דירוג. בכל בית כולם נגד כולם, והראשונים עולים לנוקאאוט.'};
+const GL=['א','ב','ג','ד'];
+const BADGES=[['first','♟','הימור ראשון','ביצעת הימור ראשון'],['pro','♞','מהמר מקצוען','10 הימורים'],['streak','♝','מנחש על','3 הצלחות ברצף'],['upset','♜','צייד הפתעות','זכייה ביחס 4 ומעלה'],['combo','♛','מלך הקומבו','זכייה בקומבו של 3+'],['allin','♚','הכל או כלום','זכייה עם כל האסימונים'],['oracle','♔','אורקל','ניחשת את האלוף'],['rich','♕','טייקון','הכפלת את הקופה'],['loyal','♖','נאמן לקופה','בונוס יומי 3 ימים ברצף'],['heart','♙','לב של אריה','5 הפסדים ברצף, וממשיך']];
+const dstr=d=>d.toLocaleDateString('en-CA');
+const today=()=>dstr(new Date()),yday=()=>{const d=new Date();d.setDate(d.getDate()-1);return dstr(d)};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const np2=n=>{let x=2;while(x<n)x*=2;return x};
+function seedOrder(n){let o=[1];while(o.length<n){const m=o.length*2;o=o.flatMap(s=>[s,m+1-s])}return o}
+const koTitle=n=>n===1?'גמר':n===2?'חצי גמר':n===4?'רבע גמר':n===8?'שמינית גמר':'סיבוב נוקאאוט';
+const demo=()=>({v:3,pw:null,cfg:{start:1000,bonus:100},fmt:{type:'ko',swiss:4,groups:2,adv:2},players:[['נועה',1420],['איתי',1380],['מאיה',1310],['יונתן',1270],['שירה',1240],['עומר',1190],['תמר',1150],['דניאל',1100]].map(([n,r])=>({n,r})),rounds:null,groups:[],res:{},closed:{},odds:{},cOdds:{},bettors:[{id:'b1',name:'אני',c:0},{id:'b2',name:'חבר',c:1}],bets:[],tx:[],streak:{},seen:{},cur:'b1',demo:true});
+function migrate(o){const s=demo();s.demo=false;s.pw=o.pw||null;s.players=(o.players||[]).map(n=>({n,r:1200}));s.res=o.res||{};for(const k in s.res)s.res[k].at=s.res[k].at||Date.now();s.closed=o.closed||{};s.swap=o.swap||{};
+  s.bettors=(o.bettors||[]).map((b,i)=>({id:b.id,name:b.name,c:i}));if(!s.bettors.length)s.bettors=[{id:'b1',name:'אני',c:0}];s.cur=o.cur;
+  s.bets=(o.bets||[]).map(b=>b.legs?b:{id:b.id,by:b.by,s:b.s,at:b.at,legs:[{m:b.m,t:b.t,pick:b.pick,od:b.od}]});s.seedMode=Object.keys(s.res).length?'legacy':'std';return s}
+function mig3(o){const P=o.players.map(p=>p.n),n=np2(P.length),R=Math.log2(n);let slots;
+  if(o.seedMode==='legacy'){const m=n/2;slots=new Array(n).fill(null);P.forEach((p,i)=>{if(i<m)slots[i*2]=p;else slots[(i-m)*2+1]=p})}else slots=seedOrder(n).map(k=>P[k-1]??null);
+  const rounds=[];
+  if(P.length>=2)for(let r=0;r<R;r++){const ms=[],win=[];
+    for(let i=0;i<slots.length/2;i++){const a=slots[2*i],b=slots[2*i+1],id=`r${r}m${i}`;if(a==null&&b==null){win.push(null);continue}
+      const sw=o.swap&&o.swap[id];let w=sw?b:a,k=sw?a:b;if(w==null){w=k;k=null}ms.push({id,w,k});
+      if(k==null)win.push(w);else{const x=(o.res||{})[id];win.push(x?((x.o==='d'?x.adv:x.o)==='w'?w:k):undefined)}}
+    rounds.push({id:'R'+r,title:koTitle(slots.length/2),stage:'ko',ms});if(win.includes(undefined)||win.length<2)break;slots=win}
+  const ids=new Set(rounds.flatMap(r=>r.ms.map(m=>m.id)));
+  const s={...o,v:3,fmt:{type:'ko',swiss:4,groups:2,adv:2},rounds,groups:[],bets:(o.bets||[]).filter(b=>b.legs.every(l=>l.m==='champ'||ids.has(l.m)))};delete s.swap;delete s.seedMode;return s}
+const rd=k=>{try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}};
+let S=rd(KEY);
+if(!S||S.v!==3){const o2=rd('chessbet-v2'),o1=rd('chessbet-v1');S=o2&&o2.v===2?mig3(o2):o1&&Array.isArray(o1.players)?mig3(migrate(o1)):demo()}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let admin=false,view='games',PD=null,ro=null;
+let slip={legs:[],mode:'combo',open:false,stake:100};
+const openDet=new Set();
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fmt=n=>Math.round(n).toLocaleString('he-IL');
+const fo=x=>(+x).toFixed(2);
+const pct=p=>Math.round(p*100)+'%';
+const rnd=x=>Math.min(25,Math.max(1.05,Math.round(x*20)/20));
+const hash=s=>{let x=5381;for(const c of s)x=((x*33)^c.charCodeAt(0))>>>0;return x.toString(36)};
+const col=b=>PAL[b.c]||'#6b7a90';
+const bettor=id=>S.bettors.find(b=>b.id===id);
+function toast(t,k=''){const e=$('#toast');e.textContent=t;e.className='on '+k;clearTimeout(e._t);e._t=setTimeout(()=>e.className='',k==='gold'?3500:2300)}
+
+/* ---------- tournament ---------- */
+const names=()=>S.players.map(p=>p.n);
+const rating=n=>(S.players.find(p=>p.n===n)||{r:1200}).r;
+const allM=()=>S.rounds.flatMap((r,ri)=>r.ms.map(m=>({...m,round:r,ri})));
+const byId=id=>allM().find(m=>m.id===id);
+const real=m=>!!m&&typeof m.k==='string';
+function winnerOf(m){if(!real(m))return m.w;const x=S.res[m.id];if(!x)return undefined;if(x.o==='d')return x.adv?(x.adv==='w'?m.w:m.k):null;return x.o==='w'?m.w:m.k}
+const roundDone=r=>r.ms.every(m=>!real(m)||S.res[m.id]||m.post);
+const allPlayed=ms=>ms.every(m=>!real(m)||S.res[m.id]);
+const hard=m=>!!(S.closed[m.id]||S.res[m.id]);
+const roundStarted=r=>r.ms.some(m=>real(m)&&(S.closed[m.id]||S.res[m.id]));
+const locked=m=>!!(S.closed[m.id]||S.res[m.id]||S.bets.some(b=>b.legs.some(l=>l.m===m.id)));
+const curRound=()=>S.rounds.find(r=>!roundDone(r));
+function standings(ns,ms){const T={};ns.forEach(n=>T[n]={n,r:rating(n),p:0,w:0,d:0,l:0,g:0,op:[]});
+  for(const m of ms){if(!real(m)){if(T[m.w]&&m.round.stage==='sw')T[m.w].p+=1;continue}
+    const x=S.res[m.id],a=T[m.w],b=T[m.k];if(!x||!a||!b)continue;a.g++;b.g++;a.op.push(m.k);b.op.push(m.w);
+    if(x.o==='d'){a.p+=.5;b.p+=.5;a.d++;b.d++}else{const[W,L]=x.o==='w'?[a,b]:[b,a];W.p++;W.w++;L.l++}}
+  const arr=Object.values(T);arr.forEach(t=>t.bh=t.op.reduce((s,o)=>s+T[o].p,0));return arr.sort((a,b)=>b.p-a.p||b.bh-a.bh||b.w-a.w||b.r-a.r)}
+const grpMs=g=>allM().filter(m=>m.round.stage==='grp'&&m.g===g);
+const grpDone=()=>S.fmt.type==='groups'&&S.rounds.some(r=>r.stage==='grp')&&allPlayed(allM().filter(m=>m.round.stage==='grp'));
+function qualifiers(){const tb=S.groups.map((g,i)=>standings(g,grpMs(i)));const out=[];for(let p=0;p<S.fmt.adv;p++)out.push(...tb.map(t=>t[p]).filter(Boolean).sort((a,b)=>b.p-a.p||b.r-a.r).map(t=>t.n));return out}
+const seeded=list=>seedOrder(np2(list.length)).map(k=>list[k-1]??null);
+function koMs(slots){const ms=[];for(let i=0;i<slots.length;i+=2){let w=slots[i],k=slots[i+1]??null;if(w==null){w=k;k=null}if(w!=null)ms.push({id:uid(),w,k})}return ms}
+function koRound(slots){const ms=koMs(slots);return{id:'R'+uid(),title:koTitle(ms.length),stage:'ko',ms}}
+function rr(ns){const a=[...ns];if(a.length%2)a.push(null);const n=a.length,out=[];
+  for(let r=0;r<n-1;r++){const ms=[];for(let i=0;i<n/2;i++){let x=a[i],y=a[n-1-i];if((i===0&&r%2)||(i>0&&i%2))[x,y]=[y,x];if(x===null){x=y;y=null}if(x!==null)ms.push({id:uid(),w:x,k:y})}out.push(ms);a.splice(1,0,a.pop())}
+  return out}
+function swissMs(excl){const done=allM().filter(m=>m.round.stage==='sw'&&m.round!==excl);let pool=standings(names(),done).map(s=>s.n);const ms=[];
+  const played=new Set(),bye=new Set(),wc={},lc={};
+  done.forEach(m=>{if(!real(m)){bye.add(m.w);return}played.add(m.w+'|'+m.k);played.add(m.k+'|'+m.w);wc[m.w]=(wc[m.w]||0)+1;lc[m.w]='w';lc[m.k]='b'});
+  if(pool.length%2){let i=pool.length-1;while(i>0&&bye.has(pool[i]))i--;ms.push({id:uid(),w:pool[i],k:null});pool.splice(i,1)}
+  if(!done.length){const h=pool.length/2;return pool.slice(0,h).map((a,i)=>i%2?{id:uid(),w:pool[h+i],k:a}:{id:uid(),w:a,k:pool[h+i]}).concat(ms)}
+  let cap=0;const bt=l=>{if(!l.length)return[];if(++cap>50000)return null;const a=l[0];for(let j=1;j<l.length;j++){if(played.has(a+'|'+l[j]))continue;const r=bt(l.filter((_,x)=>x&&x!==j));if(r)return[[a,l[j]],...r]}return null};
+  const pairs=bt(pool)||pool.reduce((o,x,i)=>(i%2?o[o.length-1].push(x):o.push([x]),o),[]);
+  return pairs.map(([a,b])=>{const wa=wc[a]||0,wb=wc[b]||0,aw=wa<wb||(wa===wb&&(lc[a]==='b'||lc[b]!=='b'));return{id:uid(),w:aw?a:b,k:aw?b:a}}).concat(ms)}
+const swRound=()=>{const r={id:'R'+uid(),title:`סיבוב ${S.rounds.filter(r=>r.stage==='sw').length+1}`,stage:'sw',ms:[]};r.ms=swissMs(r);return r};
+function mkGroups(){const k=S.fmt.groups,G=Array.from({length:k},()=>[]);S.players.slice().sort((a,b)=>b.r-a.r).forEach((p,i)=>{const row=Math.floor(i/k),c=i%k;G[row%2?k-1-c:c].push(p.n)});S.groups=G;
+  const sch=G.map(g=>rr(g)),R=Math.max(...sch.map(s=>s.length)),out=[];
+  for(let r=0;r<R;r++)out.push({id:'R'+uid(),title:`שלב הבתים · מחזור ${r+1}`,stage:'grp',ms:sch.flatMap((s,g)=>(s[r]||[]).map(m=>({...m,g})))});return out}
+function build(){S.rounds=[];S.groups=[];S.bets=[];S.res={};S.closed={};S.odds={};S.cOdds={};slip.legs=[];
+  if(S.players.length<2)return;const t=S.fmt.type;
+  if(t==='ko')S.rounds.push(koRound(seeded(names())));
+  else if(t==='league')rr(names()).forEach((ms,i)=>S.rounds.push({id:'R'+uid(),title:`מחזור ${i+1}`,stage:'rr',ms}));
+  else if(t==='swiss')S.rounds.push(swRound());
+  else S.rounds.push(...mkGroups());
+  advance()}
+function advance(){for(let g=0;g<40;g++){const last=S.rounds[S.rounds.length-1];if(!last||!roundDone(last))return;let nr=null;
+  if(last.stage==='ko'){if(last.ms.length>1)nr=koRound(last.ms.map(winnerOf))}
+  else if(last.stage==='sw'){if(S.rounds.length<S.fmt.swiss)nr=swRound()}
+  else if(last.stage==='grp'&&grpDone())nr=koRound(seeded(qualifiers()));
+  if(!nr)return;S.rounds.push(nr)}}
+function champ(){if(S.players.length<2||!S.rounds.length)return undefined;const t=S.fmt.type,last=S.rounds[S.rounds.length-1];
+  if(t==='ko'||t==='groups')return last.stage==='ko'&&last.ms.length===1&&roundDone(last)?(winnerOf(last.ms[0])??undefined):undefined;
+  const fin=t==='league'||S.rounds.length>=S.fmt.swiss;return fin&&S.rounds.every(roundDone)&&allPlayed(allM())?standings(names(),allM())[0].n:undefined}
+function elimAt(n){for(const m of allM())if(m.round.stage==='ko'&&real(m)&&S.res[m.id]&&(m.w===n||m.k===n)&&winnerOf(m)!==n)return S.res[m.id].at;
+  if(grpDone()&&!qualifiers().includes(n))return Math.max(0,...grpMsAll().map(m=>S.res[m.id].at));return null}
+const grpMsAll=()=>allM().filter(m=>m.round.stage==='grp'&&real(m)&&S.res[m.id]);
+const alive=()=>names().filter(n=>elimAt(n)===null);
+function champLocked(){if(S.players.length<2||!S.rounds.length||champ()!==undefined)return true;const t=S.fmt.type,last=S.rounds[S.rounds.length-1];
+  if(t==='ko'||t==='groups')return last.stage==='ko'&&last.ms.length===1&&roundStarted(last);
+  if(t==='league')return roundStarted(last);return S.rounds.length>=S.fmt.swiss&&roundStarted(last)}
+if(!Array.isArray(S.rounds))build();
+
+/* ---------- odds ---------- */
+function prob(g){const E=1/(1+10**((rating(g.k)-rating(g.w)-35)/400)),pd=.12;return[E*(1-pd),pd,(1-E)*(1-pd)]}
+function auto(g){const[pw,pd,pb]=prob(g),f=p=>rnd(.92/p);return{w:{w:f(pw),d:f(pd),b:f(pb)},m:{...BASE.m},e:{...BASE.e,draw:f(pd)}}}
+function oddsFor(g){const a=auto(g),o=S.odds[g.id]||{};for(const t in o)Object.assign(a[t],o[t]);return a}
+function cAuto(){const al=alive(),ws=al.map(n=>10**(rating(n)/400)),sum=ws.reduce((a,b)=>a+b,0),o={};al.forEach((n,i)=>o[n]=rnd(.9*sum/ws[i]));return o}
+function cOdds(){const o=cAuto();for(const n in o)if(S.cOdds[n])o[n]=S.cOdds[n];return o}
+const legOdds=l=>l.m==='champ'?cOdds()[l.pick]:oddsFor(byId(l.m))[l.t][l.pick];
+const legOpen=l=>{if(l.m==='champ')return!champLocked()&&alive().includes(l.pick);const m=byId(l.m);return real(m)&&!S.closed[l.m]&&!S.res[l.m]};
+function legLabel(l){if(l.m==='champ')return`אלוף הטורניר: ${esc(l.pick)}`;const g=byId(l.m);if(!g)return'משחק שבוטל';
+  const p=l.t==='w'?(l.pick==='w'?`${esc(g.w)} מנצח`:l.pick==='b'?`${esc(g.k)} מנצח`:'תיקו'):l.t==='m'?`${LBL.m[l.pick]} מהלכים`:`סיום ב${LBL.e[l.pick]}`;
+  return`${p} <small>· ${esc(g.w)} נגד ${esc(g.k)}</small>`}
+
+/* ---------- money ---------- */
+function legRes(l){
+  if(l.m==='champ'){const c=champ();if(c===undefined)return alive().includes(l.pick)?null:'lose';return c===l.pick?'win':'lose'}
+  const x=S.res[l.m];if(!x)return null;
+  const v=l.t==='w'?x.o:l.t==='m'?(x.mv<=25?'s':x.mv<=45?'m':'l'):x.e;return v===l.pick?'win':'lose'}
+function betRes(b){const r=b.legs.map(legRes);return r.includes('lose')?'lose':r.every(x=>x==='win')?'win':null}
+const tot=b=>b.legs.reduce((a,l)=>a*l.od,1);
+const pay=b=>Math.round(b.s*tot(b));
+function legT(l,b){let t;if(l.m==='champ'){t=champ()!==undefined?Math.max(0,...Object.values(S.res).map(x=>x.at)):elimAt(l.pick)}else t=(S.res[l.m]||{}).at;return Math.max(b.at+1,t||b.at+1)}
+function settleT(b,r){const ts=b.legs.map(l=>({r:legRes(l),t:legT(l,b)}));return r==='win'?Math.max(...ts.map(x=>x.t)):Math.min(...ts.filter(x=>x.r==='lose').map(x=>x.t))}
+function bal(id){let s=S.cfg.start;for(const t of S.tx)if(t.by===id)s+=t.amt;for(const b of S.bets)if(b.by===id){s-=b.s;if(betRes(b)==='win')s+=pay(b)}return s}
+function earned(id){const my=S.bets.filter(b=>b.by===id),e=new Set();if(my.length)e.add('first');if(my.length>=10)e.add('pro');
+  const st=my.map(b=>({b,r:betRes(b)})).filter(x=>x.r).map(x=>({...x,t:settleT(x.b,x.r)})).sort((a,b)=>a.t-b.t);let w=0,l=0;
+  for(const x of st){if(x.r==='win'){w++;l=0;if(tot(x.b)>=4)e.add('upset');if(x.b.legs.length>=3)e.add('combo');if(x.b.allIn)e.add('allin');if(x.b.legs.some(g=>g.m==='champ'))e.add('oracle')}else{l++;w=0}if(w>=3)e.add('streak');if(l>=5)e.add('heart')}
+  if(bal(id)>=S.cfg.start*2)e.add('rich');if((S.streak[id]||{}).best>=3)e.add('loyal');return BADGES.map(b=>b[0]).filter(k=>e.has(k))}
+function checkBadges(){const msg=[];for(const b of S.bettors){const e=earned(b.id),old=S.seen[b.id]||[];const nw=e.filter(k=>!old.includes(k));S.seen[b.id]=e;nw.forEach(k=>msg.push(`${b.name}: ${BADGES.find(x=>x[0]===k)[2]}`))}return msg}
+for(const b of S.bettors)if(!S.seen[b.id])S.seen[b.id]=earned(b.id);
+function commit(m,bad){advance();save();const nb=checkBadges();save();render();if(nb.length)toast('הישג חדש! '+nb.join(' · '),'gold');else if(m)toast(m,bad?'bad':'')}
+const err=m=>toast(m,'bad');
+const bonusReady=id=>(S.streak[id]||{}).d!==today();
+
+/* ---------- views ---------- */
+const av=(p,k)=>`<span class="av${k?' k':''}">${p}</span>`;
+const isSel=(m,t,p)=>slip.legs.some(l=>l.m===m&&l.t===t&&l.pick===p);
+const ob=(m,t,p,od,lab)=>`<button class="ob${isSel(m,t,p)?' sel':''}" data-act="pick" data-m="${m}" data-t="${t}" data-p="${esc(p)}"><small>${lab}</small><b>${fo(od)}</b></button>`;
+function matchCard(g,hero){const o=oddsFor(g),[pw,pd,pb]=prob(g);
+  return`<section class="card${hero?' hero':''}"><div class="row sb"><span class="tag">${esc(g.round.title)}${g.g!=null?' · בית '+GL[g.g]:''}</span>${g.post?'<span class="tag">נדחה</span>':hero?'<span class="tag lime">המשחק הבא</span>':''}</div>
+  <div class="duel"><div class="pl">${av('♔')}<b>${esc(g.w)}</b><small>${rating(g.w)} · לבן</small></div><span class="vs">VS</span><div class="pl">${av('♚',1)}<b>${esc(g.k)}</b><small>${rating(g.k)} · שחור</small></div></div>
+  <div class="pbar" aria-label="סיכויי ניצחון"><i style="width:${pw*100}%"></i><i style="width:${pd*100}%"></i><i style="width:${pb*100}%"></i></div>
+  <div class="row sb s" style="margin-top:4px"><span>${pct(pw)}</span><span>תיקו ${pct(pd)}</span><span>${pct(pb)}</span></div>
+  <div class="odds">${ob(g.id,'w','w',o.w.w,esc(g.w))}${ob(g.id,'w','d',o.w.d,'תיקו')}${ob(g.id,'w','b',o.w.b,esc(g.k))}</div>
+  <details data-id="${g.id}"${openDet.has(g.id)?' open':''}><summary>עוד 7 הימורים</summary>
+  <h4>כמה מהלכים יהיו?</h4><div class="odds">${['s','m','l'].map(p=>ob(g.id,'m',p,o.m[p],LBL.m[p])).join('')}</div>
+  <h4>איך המשחק ייגמר?</h4><div class="odds four">${['mate','resign','time','draw'].map(p=>ob(g.id,'e',p,o.e[p],LBL.e[p])).join('')}</div></details></section>`}
+function vGames(){
+  if(S.players.length<2)return`<div class="card empty"><h2>עוד אין שחקנים</h2><p>המנהל מוסיף אותם דרך גלגל השיניים למעלה.</p></div>`;
+  const cur=curRound(),ci=cur?S.rounds.indexOf(cur):1e9,M=allM(),live=M.filter(m=>real(m)&&!S.res[m.id]&&S.closed[m.id]),open=M.filter(m=>m.ri<=ci&&real(m)&&!S.res[m.id]&&!S.closed[m.id]).sort((a,b)=>b.ri-a.ri),byes=cur?M.filter(m=>m.round===cur&&!real(m)):[];
+  let h=S.demo?`<small>שמות ודירוגים לדוגמה. המנהל מחליף אותם בלוח הניהול.</small>`:'';
+  h+=`<div class="row sb"><h2>${cur?esc(cur.title):'הטורניר הסתיים'}</h2><span class="tag">${FMT[S.fmt.type]}</span></div>`;
+  if(byes.length)h+=`<small>פטור בסיבוב הזה: ${byes.map(m=>esc(m.w)).join(', ')}</small>`;
+  h+=live.map(g=>`<section class="card"><div class="row sb"><span class="tag live">LIVE</span><small>${esc(g.round.title)} · ההימורים נסגרו</small></div><div class="duel"><div class="pl">${av('♔')}<b>${esc(g.w)}</b></div><span class="vs">VS</span><div class="pl">${av('♚',1)}<b>${esc(g.k)}</b></div></div></section>`).join('');
+  h+=open.map((g,i)=>matchCard(g,i===0)).join('');
+  if(!open.length&&!live.length)h+=`<div class="card empty"><h2>${champ()!==undefined?'♛ '+esc(champ())+' אלוף הטורניר!':'מחכים לסיבוב הבא'}</h2></div>`;
+  if(!champLocked()){const co=cOdds();h+=`<section class="card"><div class="row sb"><h2>מי ייקח את הגביע?</h2><span class="tag">הימור עתידי</span></div><small>היחס מתעדכן לפי הדירוג ומי שנשאר בתחרות</small><div class="hs">${alive().sort((a,b)=>co[a]-co[b]).map(n=>ob('champ','c',n,co[n],esc(n))).join('')}</div></section>`}
+  return h}
+const score=m=>{const x=S.res[m.id];return x?{w:'1–0',b:'0–1',d:'½–½'}[x.o]:S.closed[m.id]?'<span class="dn">LIVE</span>':'—'};
+function standTable(title,rows,q,bh){return`<section class="card"><h2>${title}</h2><table><thead><tr><th>#</th><th>שחקן</th><th class="n">נק׳</th><th class="n">נ–ת–ה</th>${bh?'<th class="n">בוכהולץ</th>':''}</tr></thead><tbody>${rows.map((r,i)=>`<tr${i<q?' class="q"':''}><td>${i+1}</td><td><b>${esc(r.n)}</b> <small>${r.r}</small></td><td class="n"><b>${String(r.p).replace('.5','½')}</b></td><td class="n">${r.w}–${r.d}–${r.l}</td>${bh?`<td class="n">${r.bh}</td>`:''}</tr>`).join('')}</tbody></table>${q?`<small>מסומנים: ${q===1?'מוביל':'עולים לשלב הבא'}</small>`:''}</section>`}
+function bracket(ko){const cols=ko.map(r=>({t:r.title,ms:r.ms}));let m=ko[ko.length-1].ms.length;while(m>1){m=Math.ceil(m/2);cols.push({t:koTitle(m),ms:Array(m).fill(null)})}
+  const nm=(p,pc,wn)=>`<div class="${wn!==undefined&&p!=null?(p===wn?'w':'l'):''}"><span>${pc}</span>${p===null?'<small>פטור</small>':p===undefined?'<small>טרם נקבע</small>':esc(p)}</div>`;
+  return`<section class="card"><h2>נוקאאוט</h2><small>♔ לבן · ♚ שחור</small><div class="tree">${cols.map(c=>`<div class="col"><h3>${c.t}</h3>${c.ms.map(g=>{if(!g)return`<div class="m">${nm(undefined,'♔')}${nm(undefined,'♚')}</div>`;const x=S.res[g.id],wn=real(g)?winnerOf(g):g.w;
+    return`<div class="m">${nm(g.w,'♔',wn)}${nm(g.k,'♚',wn)}${x?`<p>${LBL.e[x.e]} · ${x.mv} מהלכים</p>`:real(g)&&S.closed[g.id]?'<p style="color:var(--red)">● LIVE</p>':''}</div>`}).join('')}</div>`).join('')}</div></section>`}
+function vTree(){
+  if(S.players.length<2)return`<div class="card empty">הטורניר יופיע אחרי שהמנהל יזין שחקנים.</div>`;
+  const t=S.fmt.type,c=champ(),M=allM();let h=`<section class="card row sb"><div><h2>${FMT[t]}</h2><small>${FD[t]}</small></div><div class="big" style="font-size:28px">${c?'♛ '+esc(c):''}</div></section>`;
+  if(t==='groups')h+=S.groups.map((g,i)=>standTable(`בית ${GL[i]}`,standings(g,grpMs(i)),S.fmt.adv,false)).join('');
+  if(t==='league'||t==='swiss')h+=standTable('טבלת הטורניר',standings(names(),M),1,t==='swiss');
+  const ko=S.rounds.filter(r=>r.stage==='ko');
+  if(ko.length)h+=bracket(ko);else if(t==='groups')h+=`<div class="card empty">הנוקאאוט ייבנה אוטומטית בסוף שלב הבתים</div>`;
+  const rest=S.rounds.filter(r=>r.stage!=='ko'),cur=curRound();
+  if(rest.length)h+=`<section class="card"><h2>תוצאות לפי סיבוב</h2>${rest.map(r=>`<details${r===cur?' open':''}><summary>${esc(r.title)} · ${r.ms.filter(m=>real(m)&&S.res[m.id]).length}/${r.ms.filter(real).length} הסתיימו</summary><table><tbody>${r.ms.map(m=>real(m)?`<tr><td>♔ ${esc(m.w)}</td><td class="n"><b>${score(m)}</b></td><td>♚ ${esc(m.k)}</td></tr>`:`<tr><td>${esc(m.w)}</td><td class="n"><small>פטור</small></td><td></td></tr>`).join('')}</tbody></table></details>`).join('')}</section>`;
+  if(t==='swiss'&&S.rounds.length<S.fmt.swiss)h+=`<small>סיבוב ${S.rounds.length} מתוך ${S.fmt.swiss}. הסיבוב הבא ייווצר אוטומטית כשכל המשחקים ייגמרו.</small>`;
+  return h}
+function board(){return S.bettors.map(b=>({...b,bal:bal(b.id),n:S.bets.filter(x=>x.by===b.id).length,bd:(S.seen[b.id]||[]).length})).sort((a,b)=>b.bal-a.bal)}
+const dot=b=>`<span class="dot" style="background:${col(b)}">${esc(b.name[0])}</span>`;
+function vRank(){const rows=board(),st=S.cfg.start,top=rows.slice(0,3);
+  const pod=rows.length>=3?`<div class="pod">${[top[1],top[0],top[2]].map((r,j)=>`<div><em>${[2,1,3][j]}</em>${dot(r)}<b>${esc(r.name)}</b><span class="${r.bal>=st?'up':'dn'}" style="font-weight:800">${fmt(r.bal)}</span></div>`).join('')}</div>`:'';
+  return pod+`<section class="card"><h2>טבלת המובילים</h2><table><thead><tr><th>#</th><th>מהמר</th><th class="n">אסימונים</th><th class="n">רווח</th><th class="n">הישגים</th></tr></thead><tbody>${rows.map((r,i)=>`<tr><td>${i+1}</td><td><div class="row" style="flex-wrap:nowrap">${dot(r)}<b>${esc(r.name)}</b></div></td><td class="n">${fmt(r.bal)}</td><td class="n ${r.bal>=st?'up':'dn'}">${r.bal>st?'+':''}${fmt(r.bal-st)}</td><td class="n">${r.bd}/${BADGES.length}</td></tr>`).join('')}</tbody></table></section>`}
+function vStats(){
+  const bets=S.bets,wag=bets.reduce((a,b)=>a+b.s,0),wins=bets.filter(b=>betRes(b)==='win').sort((a,b)=>pay(b)-pay(a)),bw=wins[0];
+  const fin=allM().filter(g=>real(g)&&S.res[g.id]);let cr=0,cn=0;const crowd=[];
+  for(const g of fin){const ls=bets.flatMap(b=>b.legs.map(l=>({...l,s:b.s}))).filter(l=>l.m===g.id&&l.t==='w');if(!ls.length)continue;
+    const by={w:0,d:0,b:0};ls.forEach(l=>by[l.pick]+=l.s);const fav=Object.keys(by).sort((a,b)=>by[b]-by[a])[0],o=S.res[g.id].o,tt=by.w+by.d+by.b;cn++;if(fav===o)cr++;
+    crowd.push({g,p:by[o]/tt})}
+  const pop={};bets.forEach(b=>b.legs.forEach(l=>{const k=l.m+'|'+l.t+'|'+l.pick;pop[k]=pop[k]||{l,n:0};pop[k].n++}));const popL=Object.values(pop).sort((a,b)=>b.n-a.n).slice(0,5);
+  const pl=S.players.map(p=>{const gs=fin.filter(g=>g.w===p.n||g.k===p.n),rs=gs.map(g=>{const o=S.res[g.id].o;return o==='d'?'d':(o==='w')===(g.w===p.n)?'w':'l'}),mv=gs.reduce((a,g)=>a+S.res[g.id].mv,0);return{...p,w:rs.filter(x=>x==='w').length,d:rs.filter(x=>x==='d').length,l:rs.filter(x=>x==='l').length,avg:gs.length?Math.round(mv/gs.length):null}}).sort((a,b)=>b.w-a.w||b.r-a.r);
+  const shown=S.bettors.filter(b=>PAL[b.c]);
+  return`<div class="tiles"><div class="tile"><small>סך הכל הומר</small><b>${fmt(wag)}</b><small>אסימונים</small></div><div class="tile"><small>הימורים</small><b>${bets.length}</b><small>${wins.length} זכו</small></div>
+  <div class="tile"><small>הזכייה הגדולה</small><b class="up">${bw?fmt(pay(bw)):'—'}</b><small>${bw?esc((bettor(bw.by)||{name:'?'}).name)+' · ×'+fo(tot(bw)):'עוד אין'}</small></div>
+  <div class="tile"><small>הקהל צדק</small><b>${cn?pct(cr/cn):'—'}</b><small>${cn?`ב־${cr} מתוך ${cn} משחקים`:'אחרי המשחק הראשון'}</small></div></div>
+  <section class="card"><h2>האסימונים לאורך הטורניר</h2><div class="lg">${shown.map(b=>`<span><i style="background:${col(b)}"></i>${esc(b.name)}</span>`).join('')}</div><div class="fig" id="fig"><svg id="chart" role="img" aria-label="גרף אסימונים לכל מהמר"></svg><div class="tip" id="tip"></div></div>${S.bettors.length>shown.length?'<small>בגרף מופיעים 6 המהמרים הראשונים שנרשמו</small>':''}</section>
+  <section class="card"><h2>כמה מהכסף הלך על התוצאה הנכונה</h2><div class="bars">${crowd.length?crowd.map(c=>`<div class="br"><div class="row sb"><span>${esc(c.g.w)} נגד ${esc(c.g.k)}</span><b>${pct(c.p)}</b></div><div class="t"><i style="width:${c.p*100}%"></i></div></div>`).join(''):'<p class="s">יופיע אחרי שיסתיים משחק שהימרו עליו.</p>'}</div></section>
+  <section class="card"><h2>ההימורים הפופולריים</h2><div class="bars">${popL.length?popL.map(x=>`<div class="br"><div class="row sb"><span>${legLabel(x.l)}</span><b>${x.n}</b></div><div class="t"><i style="width:${x.n/popL[0].n*100}%;background:var(--lime)"></i></div></div>`).join(''):'<p class="s">עוד אין הימורים.</p>'}</div></section>
+  <section class="card"><h2>שחקני השחמט</h2><table><thead><tr><th>שחקן</th><th class="n">דירוג</th><th class="n">נ–ת–ה</th><th class="n">ממוצע מהלכים</th></tr></thead><tbody>${pl.map(p=>`<tr><td><b>${esc(p.n)}</b>${alive().includes(p.n)?'':' <small>הודח</small>'}</td><td class="n">${p.r}</td><td class="n">${p.w}–${p.d}–${p.l}</td><td class="n">${p.avg??'—'}</td></tr>`).join('')}</tbody></table></section>`}
+function drawChart(){const s=$('#chart');if(!s)return;const W=s.clientWidth,H=s.clientHeight,shown=S.bettors.filter(b=>PAL[b.c]);
+  const ev=[];S.bets.forEach(b=>{ev.push({t:b.at,by:b.by,d:-b.s});const r=betRes(b);if(r==='win')ev.push({t:settleT(b,r),by:b.by,d:pay(b)})});S.tx.forEach(t=>ev.push({t:t.at,by:t.by,d:t.amt}));ev.sort((a,b)=>a.t-b.t);
+  if(!ev.length||!shown.length){s.innerHTML=`<text x="${W/2}" y="${H/2}" text-anchor="middle" fill="#8b99ae" font-size="14">הגרף יופיע אחרי ההימורים הראשונים</text>`;return}
+  const cur={};shown.forEach(b=>cur[b.id]=S.cfg.start);const ser=shown.map(b=>({b,v:[S.cfg.start]}));
+  ev.forEach(e=>{if(e.by in cur)cur[e.by]+=e.d;ser.forEach(x=>x.v.push(cur[x.b.id]))});
+  const n=ser[0].v.length,all=ser.flatMap(x=>x.v),mn=Math.min(...all),mx=Math.max(...all),pad=(mx-mn)*.1||100,y0=Math.max(0,mn-pad),y1=mx+pad;
+  const L=W<520?40:52,R=12,T=10,B=14,X=i=>L+(W-L-R)*i/(n-1||1),Y=v=>T+(H-T-B)*(1-(v-y0)/(y1-y0));
+  let h='';for(let k=0;k<=3;k++){const v=y0+(y1-y0)*k/3,y=Y(v);h+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#243044"/><text x="${L-8}" y="${y+4}" text-anchor="end" fill="#8b99ae" font-size="12">${fmt(v)}</text>`}
+  h+=`<line x1="${L}" x2="${W-R}" y1="${Y(S.cfg.start)}" y2="${Y(S.cfg.start)}" stroke="#55627a" stroke-dasharray="4 4"/>`;
+  ser.forEach(x=>{h+=`<polyline fill="none" stroke="${col(x.b)}" stroke-width="2" stroke-linejoin="round" points="${x.v.map((v,i)=>X(i).toFixed(1)+','+Y(v).toFixed(1)).join(' ')}"/>`});
+  h+=`<g id="hov"></g><rect x="${L}" y="0" width="${W-L-R}" height="${H}" fill="transparent" id="hit"/>`;s.innerHTML=h;
+  const tip=$('#tip'),hov=s.querySelector('#hov'),hit=s.querySelector('#hit');
+  const mv=e=>{const r=s.getBoundingClientRect(),i=Math.max(0,Math.min(n-1,Math.round((e.clientX-r.left-L)/(W-L-R)*(n-1))));
+    hov.innerHTML=`<line x1="${X(i)}" x2="${X(i)}" y1="${T}" y2="${H-B}" stroke="#8b99ae"/>`+ser.map(x=>`<circle cx="${X(i)}" cy="${Y(x.v[i])}" r="5" fill="${col(x.b)}" stroke="#111824" stroke-width="2"/>`).join('');
+    tip.innerHTML=ser.slice().sort((a,b)=>b.v[i]-a.v[i]).map(x=>`<div><span style="color:${col(x.b)}">●</span> ${esc(x.b.name)}: <b>${fmt(x.v[i])}</b></div>`).join('');
+    tip.style.display='block';const tx=X(i)>W/2?X(i)-tip.offsetWidth-12:X(i)+12;tip.style.left=tx+'px';tip.style.top='8px'};
+  hit.addEventListener('pointermove',mv);hit.addEventListener('pointerdown',mv);hit.addEventListener('pointerleave',()=>{hov.innerHTML='';tip.style.display='none'})}
+function vMe(){const me=bettor(S.cur),b=bal(S.cur),rows=board(),rk=rows.findIndex(r=>r.id===S.cur)+1,st=S.streak[S.cur]||{},e=S.seen[S.cur]||[];
+  const nb=bonusReady(S.cur),n=st.d===yday()?st.n+1:1,amt=S.cfg.bonus+Math.round(S.cfg.bonus*.25)*(Math.min(n,5)-1);
+  const my=S.bets.filter(x=>x.by===S.cur).slice().reverse();
+  return`<section class="card hero"><div class="row" style="flex-wrap:nowrap">${dot(me).replace('class="dot"','class="dot" style="width:56px;height:56px;font-size:24px;background:'+col(me)+'"')}<div><h2>${esc(me.name)}</h2><small>מקום ${rk} מתוך ${rows.length}${st.n?` · רצף בונוס: ${st.d===today()||st.d===yday()?st.n:0} ימים`:''}</small></div></div>
+  <div class="big" style="margin:18px 0 4px">${fmt(b)}</div><small>אסימונים</small>
+  <div class="row" style="margin-top:14px"><button class="btn" data-act="bonus"${nb?'':' disabled'}>${nb?`קבל בונוס יומי +${amt}`:'הבונוס הבא מחר'}</button><small>כל יום ברצף מגדיל את הבונוס</small></div></section>
+  <section class="card"><div class="row sb"><h2>הישגים</h2><span class="tag">${e.length}/${BADGES.length}</span></div><div class="badges">${BADGES.map(([k,i,t,d])=>`<div class="bd${e.includes(k)?' on':''}"><span>${i}</span><b>${t}</b><small>${d}</small></div>`).join('')}</div></section>
+  <section class="card"><h2>ההימורים שלי</h2>${my.length?my.map(x=>{const r=betRes(x),can=!r&&x.legs.every(legOpen);return`<div style="padding:12px 0;border-bottom:1px solid var(--line)"><div class="row sb"><span class="tag${x.legs.length>1?' lime':''}">${x.legs.length>1?`קומבו ×${x.legs.length}`:TL[x.legs[0].t]||'אלוף'}</span><b class="${r==='win'?'up':r==='lose'?'dn':''}">${r==='win'?'+'+fmt(pay(x)):r==='lose'?'הפסד':'ממתין'}</b></div>
+    ${x.legs.map(l=>{const lr=legRes(l);return`<div style="margin-top:6px"><span class="${lr==='win'?'up':lr==='lose'?'dn':'s'}">${lr==='win'?'✓':lr==='lose'?'✗':'○'}</span> ${legLabel(l)} <small>×${fo(l.od)}</small></div>`}).join('')}
+    <div class="row sb" style="margin-top:6px"><small>הימרת ${fmt(x.s)} · יחס ×${fo(tot(x))} · זכייה אפשרית ${fmt(pay(x))}</small>${can?`<button class="btn g" style="min-height:36px;padding:4px 12px" data-act="cancelBet" data-id="${x.id}">בטל</button>`:''}</div></div>`}).join(''):'<p class="s">עוד לא הימרת. לך ללשונית משחקים ובחר יחס.</p>'}</section>`}
+function resCard(g){const ko=g.round.stage==='ko',ed=!!S.odds[g.id];
+  return`<section class="card"><div class="row"><span class="tag">${esc(g.round.title)}${g.g!=null?' · בית '+GL[g.g]:''}</span><b>♔ ${esc(g.w)} נגד ♚ ${esc(g.k)}</b>${S.closed[g.id]?'<span class="tag live">LIVE</span>':''}${ed?'<span class="tag">יחסים ידניים</span>':''}</div>
+  <div class="row" style="margin-top:10px"><button class="btn g" data-act="toggle" data-id="${g.id}">${S.closed[g.id]?'פתח הימורים':'סגור הימורים'}</button><button class="btn g" data-act="oddsEd" data-id="${g.id}">ערוך יחסים</button>${ko?'':g.post?(g.ri>=S.rounds.indexOf(curRound())||!curRound()?`<button class="btn g" data-act="post" data-id="${g.id}">בטל דחייה</button>`:''):`<button class="btn g" data-act="post" data-id="${g.id}">דחה משחק</button>`}</div>${g.post?'<small>המשחק נדחה: הוא לא מעכב את הסיבוב הבא, ואפשר להזין לו תוצאה מתי שהוא ישוחק.</small>':''}
+  <div class="grid2" style="margin-top:10px"><label>תוצאה<select class="f" id="o-${g.id}"><option value="w">${esc(g.w)} ניצח</option><option value="b">${esc(g.k)} ניצח</option><option value="d">תיקו</option></select></label>
+  <label>איך נגמר<select class="f" id="e-${g.id}"><option value="mate">מט</option><option value="resign">כניעה</option><option value="time">נגמר הזמן</option><option value="draw">תיקו</option></select></label>
+  <label>מהלכים<input id="mv-${g.id}" type="number" inputmode="numeric" min="1" max="300"></label>
+  ${ko?`<label>אם תיקו, מי עולה<select class="f" id="adv-${g.id}"><option value="">—</option><option value="w">${esc(g.w)}</option><option value="b">${esc(g.k)}</option></select></label>`:''}</div>
+  <div class="row" style="margin-top:10px"><button class="btn" data-act="res" data-id="${g.id}">שמור תוצאה וחלק זכיות</button></div></section>`}
+let ED=null,edR=null;
+function edRounds(){return S.rounds.filter(r=>!roundDone(r)||r.ms.some(m=>real(m)&&!hard(m)))}
+function edView(){const list=edRounds();if(!list.length)return'';const cur=curRound();
+  if(!edR||!list.some(r=>r.id===edR))edR=(cur&&list.includes(cur)?cur:list[list.length-1]).id;
+  const r=S.rounds.find(x=>x.id===edR);if(!ED||ED.rid!==edR)ED={rid:edR,ms:r.ms.map(m=>({...m}))};
+  const used=ED.ms.flatMap(m=>[m.w,m.k]).filter(Boolean),out=names().filter(n=>!used.includes(n)),al=alive();
+  const opt=(v,bye)=>`<option value=""${!v?' selected':''}>${bye?'פטור / אין יריב':'בחר שחקן'}</option>`+names().map(n=>`<option value="${esc(n)}"${n===v?' selected':''}>${esc(n)}${al.includes(n)?'':' (הודח)'}</option>`).join('');
+  const rows=ED.ms.map((m,i)=>{if(hard(m))return`<div class="leg"><div>♔ ${esc(m.w)} נגד ♚ ${m.k?esc(m.k):'פטור'}</div><small>${S.res[m.id]?'הסתיים':'LIVE'} · נעול</small></div>`;
+    const nb=S.bets.filter(b=>b.legs.some(l=>l.m===m.id)).length;
+    return`<div class="erow"><span>♔</span><select class="f ed" id="ew-${i}" aria-label="לבן">${opt(m.w)}</select><button class="x" data-act="edFlip" data-i="${i}" aria-label="החלף צבעים">⇄</button><span>♚</span><select class="f ed" id="ek-${i}" aria-label="שחור">${opt(m.k,1)}</select><button class="x" data-act="edDel" data-i="${i}" aria-label="מחק משחק">✕</button>${nb?`<small class="dn" style="grid-column:1/-1">יש ${nb} הימורים על המשחק הזה. שינוי שלו יבטל אותם ויחזיר את האסימונים.</small>`:''}${m.post?'<small style="grid-column:1/-1">נדחה</small>':''}</div>`}).join('');
+  const canAuto=(r.stage==='ko'||r.stage==='sw')&&!r.ms.some(hard);
+  return`<section class="card" id="ed"><div class="row sb"><h2>זיווגים</h2><select class="f" id="edSel" aria-label="איזה סיבוב לערוך">${list.map(x=>`<option value="${x.id}"${x.id===edR?' selected':''}>${esc(x.title)}</option>`).join('')}</select></div>
+  <p class="s">העתק לכאן את הזוגות מהטורניר האמיתי. אפשר להוסיף ולמחוק משחקים, להחליף צבעים עם ⇄, ושחקן שלא משחק בסיבוב פשוט לא מופיע.</p>
+  <div style="display:grid;gap:8px;margin-top:10px">${rows||'<p class="s">אין משחקים בסיבוב. הוסף משחק.</p>'}</div>
+  ${out.length?`<p class="s" style="margin-top:10px">לא משחקים בסיבוב הזה: <b>${out.map(esc).join(', ')}</b></p>`:''}
+  <div class="row" style="margin-top:10px"><button class="btn g" data-act="edAdd">+ משחק</button><button class="btn" data-act="edSave">שמור זיווגים</button><button class="btn g" data-act="edReset">בטל שינויים</button>${canAuto?'<button class="btn g" data-act="edAuto">זיווג אוטומטי</button>':''}${r===cur&&r.ms.some(m=>real(m)&&!hard(m))?`<button class="btn g" data-act="closeRound" data-ri="${S.rounds.indexOf(r)}">סגור הימורים לכל הסיבוב</button>`:''}</div></section>`}
+function readEd(){if(!ED)return;ED.ms.forEach((m,i)=>{const w=$('#ew-'+i),k=$('#ek-'+i);if(w&&k){m.w=w.value;m.k=k.value||null}})}
+function vAdmin(){
+  if(!S.pw)return`<section class="card"><h2>קביעת סיסמת מנהל</h2><p class="s">רק מי שיודע את הסיסמה יוכל להזין תוצאות, לשנות יחסים ולערוך את הטורניר.</p><div class="row"><input id="p1" type="password" placeholder="סיסמה"><input id="p2" type="password" placeholder="שוב, לאימות"><button class="btn" data-act="setpw">שמור</button></div></section>`;
+  if(!admin)return`<section class="card"><h2>כניסת מנהל</h2><div class="row"><input id="pl" type="password" placeholder="סיסמה"><button class="btn" data-act="login">כניסה</button></div></section>`;
+  const started=Object.keys(S.res).length>0,M=allM(),cur=curRound(),f=S.fmt;if(!PD)PD=S.players.map(p=>({...p}));
+  let h=`<div class="row sb"><h2>לוח המנהל</h2><button class="btn g" data-act="logout">יציאה</button></div>`;
+  h+=`<section class="card"><h2>פורמט הטורניר</h2><div class="grid2" style="margin-top:10px"><label>פורמט<select class="f" id="fT"${started&&f.type!=='swiss'?' disabled':''}>${Object.keys(FMT).map(k=>`<option value="${k}"${k===f.type?' selected':''}>${FMT[k]}</option>`).join('')}</select></label>
+    <label>סיבובים (בשווייצרית)<input id="fS" type="number" min="1" value="${f.swiss}"></label><label>מספר בתים<input id="fG" type="number" min="2" max="4" value="${f.groups}"${started?' disabled':''}></label><label>עולים מכל בית<input id="fA" type="number" min="1" value="${f.adv}"${started?' disabled':''}></label></div>
+    <p class="s">${FD[f.type]}</p><p class="s">${started?(f.type==='swiss'?'הטורניר כבר התחיל, אז אפשר לשנות רק את מספר הסיבובים.':'הטורניר כבר התחיל, אז אי אפשר לשנות פורמט. כדי להתחיל מחדש השתמש באיפוס למטה.'):'שמירה בונה את הטורניר מחדש ומבטלת הימורים קיימים (האסימונים חוזרים).'}</p>
+    <div class="row"><button class="btn" data-act="fmtSave"${started&&f.type!=='swiss'?' disabled':''}>${started?'עדכן':'שמור ובנה טורניר'}</button></div></section>`;
+  const ci=cur?S.rounds.indexOf(cur):1e9,todo=M.filter(m=>real(m)&&!S.res[m.id]&&(m.ri<=ci||S.closed[m.id]));
+  h+=edView();
+  h+=todo.length?`<h2 style="margin-top:6px">הזנת תוצאות${cur?' · '+esc(cur.title):''}</h2>`+todo.map(resCard).join(''):`<div class="card empty">${S.players.length<2?'הוסף שחקנים למטה כדי להתחיל.':'כל המשחקים הסתיימו.'}</div>`;
+  const doneM=M.filter(m=>real(m)&&S.res[m.id]).reverse();
+  if(doneM.length)h+=`<section class="card"><details><summary>תוצאות שהוזנו (${doneM.length}) · ביטול תוצאה</summary>${doneM.map(g=>{const x=S.res[g.id];return`<div class="row sb" style="padding:10px 0;border-bottom:1px solid var(--line)"><span><small>${esc(g.round.title)}</small><br>♔ ${esc(g.w)} <b>${score(g)}</b> ♚ ${esc(g.k)} <small>· ${LBL.e[x.e]}, ${x.mv} מהלכים</small></span><button class="btn g" data-act="undo" data-id="${g.id}">בטל</button></div>`}).join('')}</details></section>`;
+  if(!champLocked())h+=`<section class="card row sb"><div><h2>יחסי האלוף</h2><small>${Object.keys(S.cOdds).length?'חלק מהיחסים ידניים':'מחושבים אוטומטית לפי דירוג'}</small></div><button class="btn g" data-act="cEd">ערוך</button></section>`;
+  h+=`<section class="card"><h2>שחקני הטורניר</h2><p class="s">${started?'אחרי שהוזנה תוצאה אפשר לשנות רק דירוגים.':'2 עד 16 שחקנים. בנוקאאוט, הסדר כאן קובע את ההגרלה (1 נגד האחרון וכן הלאה). שינוי שמות בונה את הטורניר מחדש.'} הדירוג קובע את היחסים האוטומטיים${f.type==='groups'?' ואת החלוקה לבתים':''}.</p>
+  <div style="display:grid;gap:6px;margin-top:8px">${PD.map((p,i)=>`<div class="prow"><small>${i+1}</small><input class="pn" value="${esc(p.n)}" aria-label="שם"${started?' disabled':''}><input class="pr" type="number" value="${p.r}" aria-label="דירוג"><button class="x" data-act="pDel" data-i="${i}" aria-label="מחק"${started?' disabled':''}>✕</button></div>`).join('')}</div>
+  <div class="row" style="margin-top:10px">${started?'':`<button class="btn g" data-act="pAdd">+ שחקן</button><button class="btn g" data-act="pSort">מיין לפי דירוג</button><button class="btn g" data-act="pShuf">ערבב</button>`}<button class="btn" data-act="players">שמור</button></div></section>`;
+  h+=`<section class="card"><h2>הגדרות</h2><div class="grid2" style="margin-top:8px"><label>אסימונים בהתחלה<input id="cfS" type="number" value="${S.cfg.start}"></label><label>בונוס יומי בסיסי<input id="cfB" type="number" value="${S.cfg.bonus}"></label></div><div class="row" style="margin-top:10px"><button class="btn" data-act="cfg">שמור הגדרות</button></div></section>`;
+  h+=`<section class="card"><h2>מהמרים</h2><div class="row" style="margin-top:8px">${S.bettors.map(b=>`<span class="tag row" style="padding:4px 4px 4px 12px">${esc(b.name)}<button class="x" style="width:30px;height:30px" data-act="delB" data-id="${b.id}" aria-label="מחק">✕</button></span>`).join('')}</div></section>`;
+  h+=`<section class="card"><h2>גיבוי</h2><p class="s">הכל נשמר רק בדפדפן הזה. העתק גיבוי מדי פעם ושמור בפתק.</p><div class="row"><button class="btn g" data-act="copy">העתק גיבוי</button></div><textarea id="rest" placeholder="הדבק כאן גיבוי כדי לשחזר" style="margin-top:8px"></textarea><div class="row" style="margin-top:8px"><button class="btn g" data-act="restore">שחזר</button><button class="btn r" data-act="reset">איפוס הכל</button></div></section>`;
+  return h}
+function render(){
+  if(!bettor(S.cur))S.cur=S.bettors[0].id;
+  $('#who').innerHTML=S.bettors.map(b=>`<option value="${b.id}"${b.id===S.cur?' selected':''}>${esc(b.name)}</option>`).join('');
+  $('#bal').textContent=fmt(bal(S.cur));
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+view));$('#gear').classList.toggle('on',view==='admin');
+  $('#meTab').querySelector('.nt')?.remove();if(bonusReady(S.cur))$('#meTab').insertAdjacentHTML('beforeend','<i class="nt"></i>');
+  if(ro){ro.disconnect();ro=null}
+  $('#view').innerHTML=({tree:vTree,rank:vRank,stats:vStats,me:vMe,admin:vAdmin}[view]||vGames)();
+  if(view==='stats'){ro=new ResizeObserver(drawChart);ro.observe($('#fig'))}
+  renderSlip()}
+function markSel(){document.querySelectorAll('.ob[data-act=pick]').forEach(b=>b.classList.toggle('sel',isSel(b.dataset.m,b.dataset.t,b.dataset.p)))}
+function renderSlip(){const el=$('#slip');slip.legs=slip.legs.filter(legOpen);const L=slip.legs,n=L.length;if(!n){el.classList.remove('on');return}
+  const ods=L.map(legOdds),prod=ods.reduce((a,b)=>a*b,1),combo=n>1&&slip.mode==='combo',b=bal(S.cur);
+  let h=`<button class="sbar" data-act="slipT"><span class="cnt">${n}</span>תלוש הימורים<span class="od">${combo?'×'+fo(prod):n===1?'×'+fo(ods[0]):''} ${slip.open?'▼':'▲'}</span></button>`;
+  if(slip.open){const v=Math.max(0,Math.floor(+slip.stake||0)),total=combo||n===1?v:v*n,win=combo?v*prod:ods.reduce((a,o)=>a+v*o,0);
+    h+=`<div class="sbody">${L.map((l,i)=>`<div class="leg"><div>${legLabel(l)}</div><b>${fo(ods[i])}</b><button class="x" data-act="rmLeg" data-i="${i}" aria-label="הסר">✕</button></div>`).join('')}
+    ${n>1?`<div class="seg"><button class="${combo?'on':''}" data-act="mode" data-v="combo">קומבו ×${fo(prod)}</button><button class="${combo?'':'on'}" data-act="mode" data-v="single">כל אחד בנפרד</button></div><small>${combo?'צריך לצדוק בכולם כדי לזכות, אבל היחסים מוכפלים.':'סכום ההימור נכנס לכל בחירה בנפרד.'}</small>`:''}
+    <div class="row"><input id="stake" type="number" inputmode="numeric" min="1" value="${slip.stake}" style="width:120px" aria-label="סכום"><div class="qa">${[50,100,250].map(x=>`<button data-act="amt" data-v="${x}">${x}</button>`).join('')}<button data-act="amt" data-v="${combo||n===1?b:Math.floor(b/n)}">הכל</button></div></div>
+    <div class="row sb"><div><small>${n>1&&!combo?`סה״כ ${fmt(total)} · `:''}זכייה אפשרית</small><div class="pay">${fmt(win)}</div></div><button class="btn" data-act="place"${b<1?' disabled':''}>${b<1?'נגמרו האסימונים':combo?'בצע קומבו':'בצע הימור'}</button></div>
+    <small>בחירה אחת לכל משחק · אפשר לבטל הימור עד שהמשחק מתחיל</small></div>`}
+  $('#slipIn').innerHTML=h;el.classList.add('on')}
+function modal(h){$('#ovIn').innerHTML=h;$('#ov').classList.add('on');const i=$('#ovIn input');if(i)i.focus()}
+const unmodal=()=>$('#ov').classList.remove('on');
+function readPD(){const ns=[...document.querySelectorAll('.pn')],rs=[...document.querySelectorAll('.pr')];if(ns.length)PD=ns.map((e,i)=>({n:e.value.trim(),r:Math.round(+rs[i].value)||1200}))}
+
+/* ---------- actions ---------- */
+const A={
+  pick:d=>{const l={m:d.m,t:d.t,pick:d.p},i=slip.legs.findIndex(x=>x.m===l.m);
+    if(i>=0&&slip.legs[i].t===l.t&&slip.legs[i].pick===l.pick)slip.legs.splice(i,1);else if(i>=0)slip.legs[i]=l;else slip.legs.push(l);
+    if(slip.legs.length===1&&i<0)slip.open=true;markSel();renderSlip()},
+  slipT:()=>{slip.open=!slip.open;renderSlip()},
+  rmLeg:d=>{slip.legs.splice(+d.i,1);markSel();renderSlip()},
+  mode:d=>{slip.mode=d.v;renderSlip()},
+  amt:d=>{slip.stake=+d.v;renderSlip()},
+  place:()=>{const L=slip.legs,n=L.length,v=Math.floor(+slip.stake),b=bal(S.cur),combo=n>1&&slip.mode==='combo';
+    if(!(v>0))return err('צריך לבחור סכום');if(!L.every(legOpen)){renderSlip();return err('חלק מההימורים כבר נסגרו')}
+    const total=combo||n===1?v:v*n;if(total>b)return err(`יש לך רק ${fmt(b)} אסימונים`);const allIn=total===b,at=Date.now();
+    const fresh=L.map(l=>({...l,od:legOdds(l)}));
+    if(combo||n===1)S.bets.push({id:uid(),by:S.cur,s:v,legs:fresh,at,allIn});else fresh.forEach((l,i)=>S.bets.push({id:uid(),by:S.cur,s:v,legs:[l],at:at+i,allIn}));
+    slip.legs=[];slip.open=false;commit(combo?'הקומבו נקלט! שיהיה בהצלחה':'ההימור נקלט! בהצלחה')},
+  cancelBet:d=>{const x=S.bets.find(b=>b.id===d.id);if(!x||!x.legs.every(legOpen))return err('אי אפשר לבטל, המשחק כבר התחיל');S.bets=S.bets.filter(b=>b!==x);commit('ההימור בוטל והאסימונים חזרו')},
+  bonus:()=>{const id=S.cur,st=S.streak[id]||{};if(st.d===today())return err('כבר קיבלת היום');const n=st.d===yday()?st.n+1:1,amt=S.cfg.bonus+Math.round(S.cfg.bonus*.25)*(Math.min(n,5)-1);
+    S.streak[id]={d:today(),n,best:Math.max(n,st.best||0)};S.tx.push({by:id,amt,at:Date.now(),k:'bonus'});commit(`+${amt} אסימונים! רצף של ${n} ${n===1?'יום':'ימים'}`)},
+  addB:()=>modal(`<h2>מהמר חדש</h2><input id="nb" placeholder="שם" maxlength="16"><div class="row"><button class="btn" data-act="addB2">הוסף</button><button class="btn g" data-act="cancel">ביטול</button></div>`),
+  addB2:()=>{const n=$('#nb').value.trim();if(!n)return err('צריך שם');if(S.bettors.some(b=>b.name===n))return err('השם כבר קיים');
+    const id=uid(),c=Math.max(-1,...S.bettors.map(b=>b.c))+1;S.bettors.push({id,name:n,c});S.cur=id;S.seen[id]=[];unmodal();commit(`${n} קיבל ${fmt(S.cfg.start)} אסימונים`)},
+  cancel:unmodal,
+  setpw:()=>{const a=$('#p1').value,b=$('#p2').value;if(a.length<3)return err('לפחות 3 תווים');if(a!==b)return err('הסיסמאות לא תואמות');S.pw=hash(a);admin=true;commit('הסיסמה נשמרה')},
+  login:()=>{if(hash($('#pl').value)===S.pw){admin=true;PD=null;render()}else err('סיסמה שגויה')},
+  logout:()=>{admin=false;render()},
+  toggle:d=>{S.closed[d.id]=!S.closed[d.id];commit(S.closed[d.id]?'ההימורים נסגרו, המשחק LIVE':'ההימורים נפתחו')},
+  oddsEd:d=>{const g=byId(d.id),o=oddsFor(g),lab={w:{w:esc(g.w),d:'תיקו',b:esc(g.k)},m:{s:'עד 25 מהלכים',m:'26–45',l:'46+'},e:LBL.e};
+    modal(`<h2>יחסים: ${esc(g.w)} נגד ${esc(g.k)}</h2><small>הימורים שכבר בוצעו שומרים על היחס שהיה בזמן ההימור.</small>${['w','m','e'].map(t=>`<h4>${{w:'מי ינצח',m:'כמה מהלכים',e:'איך ייגמר'}[t]}</h4><div class="grid2">${Object.keys(o[t]).map(p=>`<label>${lab[t][p]}<input id="od-${t}-${p}" type="number" step="0.05" min="1.01" value="${fo(o[t][p])}"></label>`).join('')}</div>`).join('')}
+    <div class="row"><button class="btn" data-act="oddsSave" data-id="${g.id}">שמור</button><button class="btn g" data-act="oddsAuto" data-id="${g.id}">חזור לאוטומטי</button><button class="btn g" data-act="cancel">ביטול</button></div>`)},
+  oddsSave:d=>{const g=byId(d.id),a=auto(g),ov={};for(const t in a)for(const p in a[t]){const v=+$(`#od-${t}-${p}`).value;if(!(v>=1.01&&v<=100))return err('כל יחס צריך להיות בין 1.01 ל־100');if(Math.abs(v-a[t][p])>.001)(ov[t]=ov[t]||{})[p]=v}
+    if(Object.keys(ov).length)S.odds[g.id]=ov;else delete S.odds[g.id];unmodal();commit('היחסים עודכנו')},
+  oddsAuto:d=>{delete S.odds[d.id];unmodal();commit('חזרנו ליחסים האוטומטיים')},
+  cEd:()=>{const o=cOdds();modal(`<h2>יחסי האלוף</h2><div class="grid2">${Object.keys(o).map((n,i)=>`<label>${esc(n)}<input class="co" data-i="${i}" type="number" step="0.05" min="1.01" value="${fo(o[n])}"></label>`).join('')}</div><div class="row"><button class="btn" data-act="cSave">שמור</button><button class="btn g" data-act="cAuto">חזור לאוטומטי</button><button class="btn g" data-act="cancel">ביטול</button></div>`)},
+  cSave:()=>{const a=cAuto(),ns=Object.keys(a),nv={};for(const e of document.querySelectorAll('.co')){const v=+e.value,n=ns[+e.dataset.i];if(!(v>=1.01&&v<=100))return err('יחס בין 1.01 ל־100');if(Math.abs(v-a[n])>.001)nv[n]=v}S.cOdds=nv;unmodal();commit('יחסי האלוף עודכנו')},
+  cAuto:()=>{S.cOdds={};unmodal();commit('חזרנו ליחסים האוטומטיים')},
+  res:d=>{const id=d.id,m=byId(id),ko=m.round.stage==='ko',o=$('#o-'+id).value,e=$('#e-'+id).value,mv=Math.floor(+$('#mv-'+id).value),adv=ko?$('#adv-'+id).value:'';
+    if(!(mv>=1&&mv<=300))return err('צריך מספר מהלכים בין 1 ל־300');if(o==='d'&&e!=='draw')return err('בתיקו, גם הסיום הוא "תיקו"');
+    if(o!=='d'&&e==='draw')return err('יש מנצח, אז הסיום לא תיקו');if(o==='d'&&ko&&!adv)return err('בנוקאאוט צריך לבחור מי עולה אחרי תיקו');
+    S.res[id]={o,e,mv,adv:o==='d'&&ko?adv:null,at:Date.now()};S.closed[id]=true;commit('התוצאה נשמרה והזכיות חולקו')},
+  undo:d=>{const m=byId(d.id),later=S.rounds.slice(m.ri+1).filter(r=>r.stage==='ko'||r.stage==='sw');
+    if(later.some(roundStarted))return err('קודם בטל תוצאות בסיבובים שאחריו');
+    const ids=new Set(later.flatMap(r=>r.ms.map(x=>x.id)));S.rounds=S.rounds.filter(r=>!later.includes(r));S.bets=S.bets.filter(b=>!b.legs.some(l=>ids.has(l.m)));ids.forEach(i=>{delete S.odds[i];delete S.closed[i]});
+    delete S.res[m.id];ED=null;commit(later.length?'התוצאה בוטלה, והסיבובים שאחריו יזווגו מחדש':'התוצאה בוטלה')},
+  fmtSave:()=>{const type=$('#fT').value,sw=Math.floor(+$('#fS').value),k=Math.floor(+$('#fG').value),adv=Math.floor(+$('#fA').value),n=S.players.length,started=Object.keys(S.res).length>0;
+    if(type==='swiss'&&!(sw>=1&&sw<=Math.max(1,n-1)))return err(`בשווייצרית אפשר 1 עד ${Math.max(1,n-1)} סיבובים`);
+    if(started){if(S.fmt.type!=='swiss')return err('הטורניר כבר התחיל');if(sw<S.rounds.length)return err(`כבר נוצרו ${S.rounds.length} סיבובים`);S.fmt.swiss=sw;return commit('מספר הסיבובים עודכן')}
+    if(type==='groups'){if(!(k>=2&&k<=4))return err('2 עד 4 בתים');if(Math.floor(n/k)<2)return err('צריך לפחות 2 שחקנים בכל בית');if(!(adv>=1&&adv<Math.floor(n/k)))return err(`מכל בית יכולים לעלות 1 עד ${Math.floor(n/k)-1}`)}
+    S.fmt={type,swiss:sw||4,groups:k||2,adv:adv||2};build();ED=null;commit(`נבנה טורניר ${FMT[type]}`)},
+  edAdd:()=>{readEd();ED.ms.push({id:uid(),w:'',k:null});render()},
+  edDel:d=>{readEd();ED.ms.splice(+d.i,1);render()},
+  edFlip:d=>{readEd();const m=ED.ms[+d.i];if(!m.k||!m.w)return err('צריך שני שחקנים כדי להחליף צבעים');[m.w,m.k]=[m.k,m.w];render()},
+  edReset:()=>{ED=null;render()},
+  edAuto:()=>{const ri=S.rounds.findIndex(r=>r.id===edR),r=S.rounds[ri],prev=S.rounds[ri-1];if(r.ms.some(hard))return err('יש משחקים שכבר התחילו');
+    const ids=new Set(r.ms.map(m=>m.id));S.bets=S.bets.filter(b=>!b.legs.some(l=>ids.has(l.m)));ids.forEach(i=>delete S.odds[i]);
+    r.ms=r.stage==='sw'?swissMs(r):!prev?koMs(seeded(names())):prev.stage==='grp'?koMs(seeded(qualifiers())):koMs(prev.ms.map(winnerOf));ED=null;commit('זווג אוטומטית')},
+  edSave:()=>{readEd();const r=S.rounds.find(x=>x.id===ED.rid);if(!r)return;const seen=new Set();
+    if(!ED.ms.length)return err('צריך לפחות משחק אחד');
+    for(const m of ED.ms){if(!m.w)return err('בכל משחק צריך לבחור שחקן לבן');if(m.w===m.k)return err('שחקן לא יכול לשחק נגד עצמו');for(const n of[m.w,m.k])if(n){if(seen.has(n))return err(`${n} מופיע פעמיים בסיבוב`);seen.add(n)}}
+    const old=new Map(r.ms.map(m=>[m.id,m])),gi=n=>S.groups.findIndex(g=>g.includes(n));
+    const nm=ED.ms.map(m=>{const o=old.get(m.id);if(o&&o.w===m.w&&(o.k||null)===(m.k||null))return o;const x={id:uid(),w:m.w,k:m.k||null};if(o&&o.post)x.post=true;
+      if(r.stage==='grp'){const a=gi(x.w);if(a>=0&&(x.k==null||gi(x.k)===a))x.g=a}return x});
+    const keep=new Set(nm.map(m=>m.id)),gone=r.ms.filter(m=>!keep.has(m.id)).map(m=>m.id),nb=S.bets.filter(b=>b.legs.some(l=>gone.includes(l.m))).length;
+    S.bets=S.bets.filter(b=>!b.legs.some(l=>gone.includes(l.m)));gone.forEach(i=>{delete S.odds[i];delete S.closed[i]});
+    r.ms=nm;ED=null;commit(nb?`הזיווגים נשמרו. ${nb} הימורים בוטלו והאסימונים הוחזרו`:'הזיווגים נשמרו')},
+  post:d=>{const m=S.rounds.flatMap(r=>r.ms).find(x=>x.id===d.id);if(!m)return;m.post=!m.post;if(!m.post)delete m.post;commit(m.post?'המשחק נדחה':'הדחייה בוטלה')},
+  closeRound:d=>{S.rounds[+d.ri].ms.forEach(m=>{if(real(m)&&!S.res[m.id])S.closed[m.id]=true});commit('ההימורים על כל הסיבוב נסגרו')},
+  pAdd:()=>{readPD();if(PD.length>=16)return err('עד 16 שחקנים');PD.push({n:'',r:1200});render()},
+  pDel:d=>{readPD();PD.splice(+d.i,1);render()},
+  pSort:()=>{readPD();PD.sort((a,b)=>b.r-a.r);render()},
+  pShuf:()=>{readPD();for(let i=PD.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[PD[i],PD[j]]=[PD[j],PD[i]]}render()},
+  players:()=>{readPD();const l=PD.filter(p=>p.n);if(l.length<2||l.length>16)return err('צריך 2 עד 16 שחקנים');if(new Set(l.map(p=>p.n)).size!==l.length)return err('יש שם שמופיע פעמיים');
+    if(l.some(p=>p.r<100||p.r>3000))return err('דירוג בין 100 ל־3000');
+    const same=l.length===S.players.length&&l.every((p,i)=>p.n===S.players[i].n);if(!same&&Object.keys(S.res).length)return err('אי אפשר לשנות שמות אחרי שהתחיל');
+    if(S.fmt.type==='groups'&&Math.floor(l.length/S.fmt.groups)<=S.fmt.adv){S.fmt.groups=2;S.fmt.adv=1}
+    S.players=l;S.demo=false;PD=null;ED=null;if(!same)build();commit(same?'הדירוגים עודכנו':'השחקנים נשמרו, הטורניר נבנה')},
+  cfg:()=>{const s=Math.floor(+$('#cfS').value),b=Math.floor(+$('#cfB').value);if(!(s>=100&&s<=100000)||!(b>=0&&b<=10000))return err('ערכים לא תקינים');S.cfg={start:s,bonus:b};commit('ההגדרות נשמרו')},
+  delB:d=>{if(S.bettors.length<2)return err('צריך להשאיר לפחות מהמר אחד');const b=bettor(d.id);
+    modal(`<h2>למחוק את ${esc(b.name)}?</h2><p class="s">גם ההימורים שלו יימחקו.</p><div class="row"><button class="btn r" data-act="delB2" data-id="${b.id}">מחק</button><button class="btn g" data-act="cancel">ביטול</button></div>`)},
+  delB2:d=>{S.bettors=S.bettors.filter(b=>b.id!==d.id);S.bets=S.bets.filter(b=>b.by!==d.id);S.tx=S.tx.filter(t=>t.by!==d.id);unmodal();commit('המהמר נמחק')},
+  copy:()=>{const t=JSON.stringify(S);try{navigator.clipboard.writeText(t).then(()=>toast('הגיבוי הועתק'),()=>{$('#rest').value=t;toast('הגיבוי מופיע בתיבה, העתק ידנית')})}catch(e){$('#rest').value=t;toast('הגיבוי מופיע בתיבה, העתק ידנית')}},
+  restore:()=>{try{let x=JSON.parse($('#rest').value);if(x.v!==3)x=x.v===2?mig3(x):mig3(migrate(x));if(!Array.isArray(x.players)||!Array.isArray(x.bets)||!x.bettors.length)throw 0;S=x;slip.legs=[];PD=null;commit('שוחזר מהגיבוי')}catch(e){err('הגיבוי לא תקין')}},
+  reset:()=>modal(`<h2>איפוס הכל</h2><p class="s">כל השחקנים, המהמרים וההימורים יימחקו (הסיסמה נשארת). כדי לאשר, כתוב: איפוס</p><input id="rc"><div class="row"><button class="btn r" data-act="reset2">אפס</button><button class="btn g" data-act="cancel">ביטול</button></div>`),
+  reset2:()=>{if($('#rc').value.trim()!=='איפוס')return err('צריך לכתוב "איפוס"');const pw=S.pw;S=demo();S.pw=pw;S.players=[];S.demo=false;S.bettors=[{id:'b1',name:'אני',c:0}];S.seen={b1:[]};S.fmt={type:'ko',swiss:4,groups:2,adv:2};build();PD=null;unmodal();commit('הכל אופס')}
+};
+document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(t&&!t.disabled&&A[t.dataset.act]){e.preventDefault();A[t.dataset.act](t.dataset)}});
+document.addEventListener('input',e=>{if(e.target.id==='stake'){slip.stake=e.target.value;const p=e.target.selectionStart;renderSlip();const s=$('#stake');s.focus();try{s.setSelectionRange(p,p)}catch(x){}}});
+document.addEventListener('toggle',e=>{const d=e.target;if(d.tagName==='DETAILS'&&d.dataset.id){d.open?openDet.add(d.dataset.id):openDet.delete(d.dataset.id)}},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')unmodal();if(e.key==='Enter'){const m={pl:'login',p2:'setpw',nb:'addB2',stake:'place',rc:'reset2'}[e.target.id];if(m)A[m]({})}});
+$('#ov').addEventListener('click',e=>{if(e.target.id==='ov')unmodal()});
+$('#who').addEventListener('change',e=>{S.cur=e.target.value;save();render()});
+document.addEventListener('change',e=>{if(e.target.id==='edSel'){edR=e.target.value;ED=null;render()}else if(e.target.classList.contains('ed')){readEd();render()}});
+const route=()=>{const h=location.hash.slice(1);view=['games','tree','rank','stats','me','admin'].includes(h)?h:'games';if(view!=='admin')PD=null;render();scrollTo(0,0)};
+window.addEventListener('hashchange',route);
+route();
+}
+</script>
+</body>
+</html>
