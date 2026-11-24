@@ -138,6 +138,14 @@ tr.q td:first-child{box-shadow:inset -3px 0 0 var(--lime);color:var(--lime);font
 <script>
 {
 const KEY='chessbet-v3';
+/* sharing: the admin publishes the tournament to tournament.json in the repo; everyone else loads it */
+const TKEY='chessbet-gh',SKEY='chessbet-pubsig';
+const PUB=['players','fmt','rounds','groups','res','closed','odds','cOdds','cfg','demo'];
+const REPO=(()=>{const h=location.hostname,p=location.pathname.split('/').filter(Boolean);return h.endsWith('.github.io')?{o:h.split('.')[0],r:p[0]||h}:{o:'eithanhaletsky-hub',r:'chess-bet'}})();
+const lsGet=k=>{try{return localStorage.getItem(k)||''}catch(e){return''}};
+const lsSet=(k,v)=>{try{v==null?localStorage.removeItem(k):localStorage.setItem(k,v)}catch(e){}};
+const tok=()=>lsGet(TKEY);
+const friend=()=>!!S.pubAt&&!tok();
 const PAL=['#c6ff3d','#3de0ff','#ff5ccf','#ffa53d','#9d7bff','#ffe14d'];
 const LBL={w:{w:'לבן',d:'תיקו',b:'שחור'},m:{s:'עד 25',m:'26–45',l:'46+'},e:{mate:'מט',resign:'כניעה',time:'נגמר הזמן',draw:'תיקו'}};
 const TL={w:'תוצאה',m:'מהלכים',e:'סיום'};
@@ -230,7 +238,7 @@ function build(){S.rounds=[];S.groups=[];S.bets=[];S.res={};S.closed={};S.odds={
   else if(t==='swiss')S.rounds.push(swRound());
   else S.rounds.push(...mkGroups());
   advance()}
-function advance(){for(let g=0;g<40;g++){const last=S.rounds[S.rounds.length-1];if(!last||!roundDone(last))return;let nr=null;
+function advance(){if(friend())return;for(let g=0;g<40;g++){const last=S.rounds[S.rounds.length-1];if(!last||!roundDone(last))return;let nr=null;
   if(last.stage==='ko'){if(last.ms.length>1)nr=koRound(last.ms.map(winnerOf))}
   else if(last.stage==='sw'){if(S.rounds.length<S.fmt.swiss)nr=swRound()}
   else if(last.stage==='grp'&&grpDone())nr=koRound(seeded(qualifiers()));
@@ -276,7 +284,25 @@ function earned(id){const my=S.bets.filter(b=>b.by===id),e=new Set();if(my.lengt
   if(bal(id)>=S.cfg.start*2)e.add('rich');if((S.streak[id]||{}).best>=3)e.add('loyal');return BADGES.map(b=>b[0]).filter(k=>e.has(k))}
 function checkBadges(){const msg=[];for(const b of S.bettors){const e=earned(b.id),old=S.seen[b.id]||[];const nw=e.filter(k=>!old.includes(k));S.seen[b.id]=e;nw.forEach(k=>msg.push(`${b.name}: ${BADGES.find(x=>x[0]===k)[2]}`))}return msg}
 for(const b of S.bettors)if(!S.seen[b.id])S.seen[b.id]=earned(b.id);
-function commit(m,bad){advance();save();const nb=checkBadges();save();render();if(nb.length)toast('הישג חדש! '+nb.join(' · '),'gold');else if(m)toast(m,bad?'bad':'')}
+const pubStr=()=>JSON.stringify(Object.fromEntries(PUB.map(k=>[k,S[k]])));
+const b64=s=>{let x='';for(const c of new TextEncoder().encode(s))x+=String.fromCharCode(c);return btoa(x)};
+let pubMsg='',pubT=null,pubBusy=false;
+function setPub(m,bad){pubMsg=m;const e=$('#pubSt');if(e){e.textContent=m;e.className=bad?'dn':'s'}if(bad)toast(m,'bad')}
+function schedulePub(){if(!tok())return;clearTimeout(pubT);pubT=setTimeout(()=>publish(),1500)}
+async function publish(force){const t=tok();if(!t)return;const body=pubStr(),sig=hash(body);
+  if(!force&&sig===lsGet(SKEY))return;if(pubBusy){schedulePub();return}pubBusy=true;setPub('מפרסם…');
+  const url=`https://api.github.com/repos/${REPO.o}/${REPO.r}/contents/tournament.json`,H={Authorization:'Bearer '+t,Accept:'application/vnd.github+json'};
+  try{let sha;const g=await fetch(url,{headers:H,cache:'no-store'});if(g.ok)sha=(await g.json()).sha;else if(g.status!==404)throw g.status;
+    const p=await fetch(url,{method:'PUT',headers:H,body:JSON.stringify({message:'Update tournament',content:b64(JSON.stringify({...JSON.parse(body),at:Date.now()})),sha})});
+    if(!p.ok)throw p.status;lsSet(SKEY,sig);setPub('פורסם ✓ חברים יראו את זה תוך דקה־שתיים')}
+  catch(e){setPub(e===401||e===403||e===404?'הטוקן לא תקין או שאין לו הרשאת כתיבה לריפו':'הפרסום נכשל. נסה "פרסם עכשיו" שוב',1)}
+  pubBusy=false}
+async function pull(){if(tok())return;try{const r=await fetch('tournament.json?t='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text(),sig=hash(t);if(sig===S.pubSig)return;const d=JSON.parse(t);
+  if(!Array.isArray(d.rounds)||!Array.isArray(d.players))return;
+  PUB.forEach(k=>{if(k in d)S[k]=d[k]});S.pubAt=d.at||Date.now();S.pubSig=sig;
+  const ids=new Set(allM().map(m=>m.id)),ns=names();S.bets=S.bets.filter(b=>b.legs.every(l=>l.m==='champ'?ns.includes(l.pick):ids.has(l.m)));
+  admin=false;PD=null;ED=null;commit()}catch(e){}}
+function commit(m,bad){advance();save();schedulePub();const nb=checkBadges();save();render();if(nb.length)toast('הישג חדש! '+nb.join(' · '),'gold');else if(m)toast(m,bad?'bad':'')}
 const err=m=>toast(m,'bad');
 const bonusReady=id=>(S.streak[id]||{}).d!==today();
 
@@ -399,6 +425,8 @@ function vAdmin(){
   if(!admin)return`<section class="card"><h2>כניסת מנהל</h2><div class="row"><input id="pl" type="password" placeholder="סיסמה"><button class="btn" data-act="login">כניסה</button></div></section>`;
   const started=Object.keys(S.res).length>0,M=allM(),cur=curRound(),f=S.fmt;if(!PD)PD=S.players.map(p=>({...p}));
   let h=`<div class="row sb"><h2>לוח המנהל</h2><button class="btn g" data-act="logout">יציאה</button></div>`;
+  h+=`<section class="card"><h2>פרסום לחברים</h2>${tok()?`<p class="s">מחובר ל־GitHub. כל שינוי כאן (שחקנים, יחסים, תוצאות, סגירת הימורים) מתפרסם לבד, וכל מי שנכנס לקישור רואה אותו תוך דקה־שתיים.</p><p id="pubSt" class="s">${esc(pubMsg)}</p><div class="row"><button class="btn" data-act="pubNow">פרסם עכשיו</button><button class="btn g" data-act="tokDel">נתק</button></div>`
+    :`<p class="s">כרגע הטורניר נמצא רק בדפדפן הזה. כדי שחברים שנכנסים לקישור יראו אותו, הדבק טוקן של GitHub עם הרשאת כתיבה (Contents: Read and write) לריפו <b>${esc(REPO.r)}</b>. הטוקן נשמר רק בדפדפן הזה.</p><div class="row"><input id="tk" type="password" placeholder="github_pat_…" autocomplete="off" style="flex:1"><button class="btn" data-act="tokSave">חבר ופרסם</button></div>`}</section>`;
   h+=`<section class="card"><h2>פורמט הטורניר</h2><div class="grid2" style="margin-top:10px"><label>פורמט<select class="f" id="fT"${started&&f.type!=='swiss'?' disabled':''}>${Object.keys(FMT).map(k=>`<option value="${k}"${k===f.type?' selected':''}>${FMT[k]}</option>`).join('')}</select></label>
     <label>סיבובים (בשווייצרית)<input id="fS" type="number" min="1" value="${f.swiss}"></label><label>מספר בתים<input id="fG" type="number" min="2" max="4" value="${f.groups}"${started?' disabled':''}></label><label>עולים מכל בית<input id="fA" type="number" min="1" value="${f.adv}"${started?' disabled':''}></label></div>
     <p class="s">${FD[f.type]}</p><p class="s">${started?(f.type==='swiss'?'הטורניר כבר התחיל, אז אפשר לשנות רק את מספר הסיבובים.':'הטורניר כבר התחיל, אז אי אפשר לשנות פורמט. כדי להתחיל מחדש השתמש באיפוס למטה.'):'שמירה בונה את הטורניר מחדש ומבטלת הימורים קיימים (האסימונים חוזרים).'}</p>
@@ -420,7 +448,7 @@ function render(){
   if(!bettor(S.cur))S.cur=S.bettors[0].id;
   $('#who').innerHTML=S.bettors.map(b=>`<option value="${b.id}"${b.id===S.cur?' selected':''}>${esc(b.name)}</option>`).join('');
   $('#bal').textContent=fmt(bal(S.cur));
-  document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+view));$('#gear').classList.toggle('on',view==='admin');
+  document.querySelectorAll('.nav a').forEach(a=>a.classList.toggle('on',a.getAttribute('href')==='#'+view));$('#gear').classList.toggle('on',view==='admin');$('#gear').style.display=friend()?'none':'';
   $('#meTab').querySelector('.nt')?.remove();if(bonusReady(S.cur))$('#meTab').insertAdjacentHTML('beforeend','<i class="nt"></i>');
   if(ro){ro.disconnect();ro=null}
   $('#view').innerHTML=({tree:vTree,rank:vRank,stats:vStats,me:vMe,admin:vAdmin}[view]||vGames)();
@@ -466,6 +494,9 @@ const A={
   setpw:()=>{const a=$('#p1').value,b=$('#p2').value;if(a.length<3)return err('לפחות 3 תווים');if(a!==b)return err('הסיסמאות לא תואמות');S.pw=hash(a);admin=true;commit('הסיסמה נשמרה')},
   login:()=>{if(hash($('#pl').value)===S.pw){admin=true;PD=null;render()}else err('סיסמה שגויה')},
   logout:()=>{admin=false;render()},
+  tokSave:()=>{const v=$('#tk').value.trim();if(!v)return err('צריך להדביק טוקן');lsSet(TKEY,v);delete S.pubAt;save();render();publish(true)},
+  tokDel:()=>{lsSet(TKEY,null);lsSet(SKEY,null);pubMsg='';render();toast('נותק. הטורניר שכבר פורסם נשאר באתר')},
+  pubNow:()=>publish(true),
   toggle:d=>{S.closed[d.id]=!S.closed[d.id];commit(S.closed[d.id]?'ההימורים נסגרו, המשחק LIVE':'ההימורים נפתחו')},
   oddsEd:d=>{const g=byId(d.id),o=oddsFor(g),lab={w:{w:esc(g.w),d:'תיקו',b:esc(g.k)},m:{s:'עד 25 מהלכים',m:'26–45',l:'46+'},e:LBL.e};
     modal(`<h2>יחסים: ${esc(g.w)} נגד ${esc(g.k)}</h2><small>הימורים שכבר בוצעו שומרים על היחס שהיה בזמן ההימור.</small>${['w','m','e'].map(t=>`<h4>${{w:'מי ינצח',m:'כמה מהלכים',e:'איך ייגמר'}[t]}</h4><div class="grid2">${Object.keys(o[t]).map(p=>`<label>${lab[t][p]}<input id="od-${t}-${p}" type="number" step="0.05" min="1.01" value="${fo(o[t][p])}"></label>`).join('')}</div>`).join('')}
@@ -528,13 +559,14 @@ const A={
 document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(t&&!t.disabled&&A[t.dataset.act]){e.preventDefault();A[t.dataset.act](t.dataset)}});
 document.addEventListener('input',e=>{if(e.target.id==='stake'){slip.stake=e.target.value;const p=e.target.selectionStart;renderSlip();const s=$('#stake');s.focus();try{s.setSelectionRange(p,p)}catch(x){}}});
 document.addEventListener('toggle',e=>{const d=e.target;if(d.tagName==='DETAILS'&&d.dataset.id){d.open?openDet.add(d.dataset.id):openDet.delete(d.dataset.id)}},true);
-document.addEventListener('keydown',e=>{if(e.key==='Escape')unmodal();if(e.key==='Enter'){const m={pl:'login',p2:'setpw',nb:'addB2',stake:'place',rc:'reset2'}[e.target.id];if(m)A[m]({})}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')unmodal();if(e.key==='Enter'){const m={pl:'login',p2:'setpw',nb:'addB2',stake:'place',rc:'reset2',tk:'tokSave'}[e.target.id];if(m)A[m]({})}});
 $('#ov').addEventListener('click',e=>{if(e.target.id==='ov')unmodal()});
 $('#who').addEventListener('change',e=>{S.cur=e.target.value;save();render()});
 document.addEventListener('change',e=>{if(e.target.id==='edSel'){edR=e.target.value;ED=null;render()}else if(e.target.classList.contains('ed')){readEd();render()}});
 const route=()=>{const h=location.hash.slice(1);view=['games','tree','rank','stats','me','admin'].includes(h)?h:'games';if(view!=='admin')PD=null;render();scrollTo(0,0)};
 window.addEventListener('hashchange',route);
 route();
+pull();setInterval(pull,60000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)pull()});
 }
 </script>
 </body>
